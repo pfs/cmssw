@@ -19,6 +19,8 @@ class MergedGenParticleProducer : public edm::EDProducer {
   virtual void beginJob();
   virtual void produce(edm::Event &, const edm::EventSetup &);
   virtual void endJob();
+  
+  bool isPhotonFromPrunedHadron(pat::PackedGenParticle pk);
 
   edm::EDGetTokenT<edm::View<reco::GenParticle>> input_pruned_;
   edm::EDGetTokenT<edm::View<pat::PackedGenParticle>> input_packed_;
