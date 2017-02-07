@@ -9,6 +9,7 @@
 #include "DataFormats/Common/interface/View.h"
 #include "DataFormats/PatCandidates/interface/PackedGenParticle.h"
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
+#include "HepPDT/ParticleID.hh"
 
 
 MergedGenParticleProducer::MergedGenParticleProducer(const edm::ParameterSet& config){
@@ -145,14 +146,12 @@ void MergedGenParticleProducer::beginJob() {
 void MergedGenParticleProducer::endJob() {}
 
 bool MergedGenParticleProducer::isPhotonFromPrunedHadron(pat::PackedGenParticle pk) {
+  HepPDT::ParticleID motherid(pk.mother(0)->pdgId());
   return
     ( pk.pdgId() == 22 // We care about photons for lepton dressing here
       and pk.statusFlags().isDirectHadronDecayProduct() // Gen status flag seems correct
-      // Catch wrong beam, quark or gluon mothers
-      and ((pk.mother(0)->pdgId() == 2212 and pk.mother(0)->status() != 2)
-        or pk.mother(0)->pdgId() == 21
-        or abs(pk.mother(0)->pdgId()) <= 6
-      )
+      // Catch cases where miniaod mother is not compatible with the status flag
+      and not (motherid.isHadron() and pk.mother(0)->status() == 2)
     );
 }
 
