@@ -8,8 +8,9 @@ from TopQuarkAnalysis.TopEventProducers.tqafInputFiles_cff import relValTTbar
 process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring(
       #'/store/mc/RunIISpring16MiniAODv2/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/MINIAODSIM/premix_withHLT_80X_mcRun2_asymptotic_v14-v1/00000/042D62D1-C597-E611-8FA4-549F3525B9A0.root'
-      'file:C85C0DCE-E293-E611-9F90-02163E0115E8.root'
-      #'file:TT_TuneCUETP8M2T4_13TeV-powheg-pythia8-MiniAOD.root'
+      #'file:C85C0DCE-E293-E611-9F90-02163E0115E8.root'
+      'file:TT_TuneCUETP8M2T4_13TeV-powheg-pythia8-MiniAOD.root'
+      #'file:TT_TuneCUETP8M2T4_13TeV-powheg-pythia8-MiniAOD-allHadrons.root'
     )
 )
 
@@ -25,7 +26,14 @@ process.options = cms.untracked.PSet(
 
 #process.load("TopQuarkAnalysis.TopEventProducers.producers.pseudoTop_cfi")
 process.load('SimGeneral.HepPDTESSource.pythiapdt_cfi')
-process.load("GeneratorInterface.RivetInterface.genParticles2HepMC_cfi")
+process.mergedGenParticles = cms.EDProducer("MergedGenParticleProducer",
+    inputPruned = cms.InputTag("prunedGenParticles"),
+    inputPacked = cms.InputTag("packedGenParticles"),
+)
+process.genParticles2HepMC = cms.EDProducer("GenParticles2HepMCConverter",
+    genParticles = cms.InputTag("mergedGenParticles"),
+    genEventInfo = cms.InputTag("generator"),
+)
 process.pseudoTop = cms.EDProducer("PseudoTopRivetProducer",
     src = cms.InputTag("genParticles2HepMC:unsmeared"),
 
@@ -52,7 +60,7 @@ process.pseudoTop = cms.EDProducer("PseudoTopRivetProducer",
 #process.p = cms.Path(process.pseudoTop)
 
 process.out = cms.OutputModule("PoolOutputModule",
-    fileName = cms.untracked.string("out.root"),
+    fileName = cms.untracked.string("out-miniaod.root"),
     outputCommands = cms.untracked.vstring(
         "drop *",
         #"keep *_genParticles_*_*",

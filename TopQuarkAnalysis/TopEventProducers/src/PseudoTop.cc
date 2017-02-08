@@ -4,18 +4,11 @@
 
 using namespace Rivet;
 
-struct GreaterByPt
-{
-  bool operator()(const Particle& a, const Particle& b) {
-    return a.pt() > b.pt();
-  }
-};
-
-void PseudoTop::project(const Event& e) {
+void PseudoTop::project(const Event& event) {
   // Leptons : do the lepton clustering anti-kt R=0.1 using stable photons and leptons not from hadron decay
   // Neutrinos : neutrinos not from hadron decay
   // MET : vector sum of all invisible particles in x-y plane 
-  // Jets : anti-kt R=0.4 using all particles excluding neutrinos and particles used in lepton clustering
+  // Jets : anti-kt clustering using all particles excluding neutrinos and particles used in lepton clustering
   //        add ghost B hadrons during the jet clustering to identify B jets.
 
   // W->lv : dressed lepton and neutrino pairs
@@ -36,103 +29,26 @@ void PseudoTop::project(const Event& e) {
   _leptons.clear();
   _neutrinos.clear();
   _mode1 = _mode2 = CH_HADRON;
+  
+  // Get analysis objects from projections
+  
+  _leptons = applyProjection<DressedLeptons>(event, "DressedLeptons").dressedLeptons();
 
-  // Collect final state particles
-  Particles pForLep, pForJet;
-  foreach (const GenParticle* p, Rivet::particles(e.genEvent())) {
-    const int status = p->status();
-    const int pdgId = p->pdg_id();
-    if (status == 1) {
-      Particle rp(*p);
-      if (!PID::isHadron(pdgId) && !rp.fromHadron()) {
-        // Collect particles not from hadron decay
-        if (rp.isNeutrino()) {
-          // Prompt neutrinos are kept in separate collection
-          _neutrinos.push_back(rp);
-        } else if (pdgId == 22 || rp.isLepton()) {
-          // Leptons and photons for the dressing
-          pForLep.push_back(rp);
-        }
-      } else if (!rp.isNeutrino()) {
-        // Use all particles from hadron decay
-        pForJet.push_back(rp);
-      }
-    } else if (PID::isHadron(pdgId) && PID::hasBottom(pdgId)) {
-      // NOTE: Consider B hadrons with pT > 5GeV - not in CMS proposal
-      //if ( p->momentum().perp() < 5 ) continue; 
-
-      // Do unstable particles, to be used in the ghost B clustering
-      // Use last B hadrons only
-      bool isLast = true;
-      foreach (GenParticle* pp, Rivet::particles(p->end_vertex(), HepMC::children)) {
-        if (PID::hasBottom(pp->pdg_id())) {
-          isLast = false;
-          break;
-        }
-      }
-      if (!isLast) continue;
-
-      // Rescale momentum by 10^-20
-      Particle ghost(pdgId, FourMomentum(p->momentum())*1e-20/p->momentum().rho());
-      pForJet.push_back(ghost);
-    }
+  Cut jet_cut = (Cuts::abseta < _jetMaxEta) and (Cuts::pT > _jetMinPt*GeV);
+  _jets = applyProjection<FastJets>(event, "Jets").jetsByPt(jet_cut);
+  for (const Jet& jet : _jets) {
+    if (jet.bTagged()) _bjets.push_back(jet);
+    else               _ljets.push_back(jet);
   }
-
-  // Start object building from trivial thing - prompt neutrinos
-  std::sort(_neutrinos.begin(), _neutrinos.end(), GreaterByPt());
-
-  // Proceed to lepton dressing
-  FastJets fjLep(FinalState(), FastJets::ANTIKT, _lepR);
-  fjLep.calc(pForLep);
-  std::set<int> dressedIdxs;
-  foreach (const Jet& lep, fjLep.jetsByPt(_lepMinPt)) {
-    if (std::abs(lep.eta()) > _lepMaxEta) continue;
-
-    double leadingPt = -1;
-    int leptonId = 0;
-    foreach (const Particle& p, lep.particles()) {
-      dressedIdxs.insert(p.genParticle()->barcode());
-      if (p.isLepton() && p.momentum().pt() > leadingPt) {
-        leadingPt = p.momentum().pt();
-        leptonId = p.pdgId();
-      }
-    }
-    if (leptonId == 0) continue;
-    _leptons.push_back(Particle(leptonId, lep.momentum()));
+  
+  const Particles neutrinos = applyProjection<IdentifiedFinalState>(event, "Neutrinos").particlesByPt();
+  for (const Particle& nu : neutrinos) {
+    if (not nu.fromHadron()) _neutrinos.push_back(nu); // Get prompt neutrinos
   }
+  
+  _met = -applyProjection<MissingMomentum>(event, "MET").vectorEt();
 
-  // Re-use particles not used in lepton dressing
-  foreach (const Particle& rp, pForLep) {
-    const int barcode = rp.genParticle()->barcode();
-    // Skip if the particle is used in dressing
-    if (dressedIdxs.find(barcode) != dressedIdxs.end()) continue;
-
-    // Put back to be used in jet clustering
-    pForJet.push_back(rp);
-  }
-
-  // Then do the jet clustering
-  FastJets fjJet(FinalState(), FastJets::ANTIKT, _jetR);
-  //fjJet.useInvisibles(); // NOTE: CMS proposal to remove neutrinos
-  fjJet.calc(pForJet);
-  // Jets _bjets, _ljets; FIME
-  foreach (const Jet& jet, fjJet.jetsByPt(_jetMinPt)) {
-    if (std::abs(jet.eta()) > _jetMaxEta) continue;
-    _jets.push_back(jet);
-
-    bool isBJet = false;
-    foreach (const Particle& rp, jet.particles()) {
-      if (PID::hasBottom(rp.pdgId())) {
-        isBJet = true;
-        break;
-      }
-    }
-
-    if ( isBJet ) _bjets.push_back(jet);
-    else _ljets.push_back(jet);
-  }
-
-  // Every building blocks are ready. Continue to pseudo-W and pseudo-top combination
+  // All building blocks are ready. Continue to pseudo-W and pseudo-top combination
 
   if (_bjets.size() < 2) return; // Ignore single top for now
 
@@ -220,13 +136,9 @@ void PseudoTop::project(const Event& e) {
     }
     if ( hasVetoLepton ) return;
 
-    // Calculate MET
-    double metX = 0, metY = 0;
-    for ( auto neutrino : _neutrinos ) {
-      metX += neutrino.px();
-      metY += neutrino.py();
-    }
-    const double metPt = std::hypot(metX, metY);
+    // MET and neutrino reconstruction
+    double metX = _met.x(), metY = _met.y();
+    const double metPt = _met.perp();
     if ( metPt < _minMETSemiLepton ) return;
 
     const double mtW = std::sqrt( 2*lepton.pt()*metPt*cos(lepton.phi()-atan2(metX, metY)) );
