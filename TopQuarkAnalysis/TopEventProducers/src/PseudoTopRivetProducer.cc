@@ -26,7 +26,7 @@ PseudoTopRivetProducer::PseudoTopRivetProducer(const edm::ParameterSet& pset):
   srcToken_(consumes<edm::HepMCProduct>(pset.getParameter<edm::InputTag>("src"))),
   //finalStateToken_(consumes<edm::View<reco::Candidate> >(pset.getParameter<edm::InputTag>("finalStates"))),
   //genParticleToken_(consumes<edm::View<reco::Candidate> >(pset.getParameter<edm::InputTag>("genParticles"))),
-  projection_(pset.getParameter<std::string>("projection")),
+  projection_(pset.getParameter<std::string>("projection"))
 {
   genVertex_ = reco::Particle::Point(0,0,0);
 
