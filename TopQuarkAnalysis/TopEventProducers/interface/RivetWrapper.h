@@ -13,9 +13,9 @@ namespace Rivet {
       }
 
       // addProjection() is protected, so we need to register the PseudoTop projection here
-      void init() {
+      void init(const edm::ParameterSet& pset) {
         _allowProjReg = true;
-        addProjection(PseudoTop(), "ttbar");
+        addProjection(PseudoTop(pset), "PseudoTop");
       };
 
       // Do nothing here

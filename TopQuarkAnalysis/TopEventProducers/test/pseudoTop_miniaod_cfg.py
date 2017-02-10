@@ -36,6 +36,8 @@ process.genParticles2HepMC = cms.EDProducer("GenParticles2HepMCConverter",
 )
 process.pseudoTop = cms.EDProducer("PseudoTopRivetProducer",
     src = cms.InputTag("genParticles2HepMC:unsmeared"),
+    
+    projection = cms.string("PseudoTop"),
 
     minLeptonPt = cms.double(15),
     maxLeptonEta = cms.double(2.5),

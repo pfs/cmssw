@@ -24,15 +24,8 @@ private:
   }
 
   const edm::EDGetTokenT<edm::HepMCProduct> srcToken_;
-
-  const double leptonConeSize_, jetConeSize_;
-  const double wMass_, tMass_;
-  const double minLeptonPt_, maxLeptonEta_, minJetPt_, maxJetEta_;
-  const double minLeptonPtDilepton_, maxLeptonEtaDilepton_;
-  const double minDileptonMassDilepton_;
-  const double minLeptonPtSemilepton_, maxLeptonEtaSemilepton_;
-  const double minVetoLeptonPtSemilepton_, maxVetoLeptonEtaSemilepton_;
-  const double minMETSemiLepton_, minMtWSemiLepton_;
+  
+  const std::string projection_;
 
   reco::Particle::Point genVertex_;
   

@@ -26,26 +26,7 @@ PseudoTopRivetProducer::PseudoTopRivetProducer(const edm::ParameterSet& pset):
   srcToken_(consumes<edm::HepMCProduct>(pset.getParameter<edm::InputTag>("src"))),
   //finalStateToken_(consumes<edm::View<reco::Candidate> >(pset.getParameter<edm::InputTag>("finalStates"))),
   //genParticleToken_(consumes<edm::View<reco::Candidate> >(pset.getParameter<edm::InputTag>("genParticles"))),
-  leptonConeSize_(pset.getParameter<double>("leptonConeSize")),
-  jetConeSize_(pset.getParameter<double>("jetConeSize")),
-  wMass_(pset.getParameter<double>("wMass")),
-  tMass_(pset.getParameter<double>("tMass")),
-
-  minLeptonPt_(pset.getParameter<double>("minLeptonPt")),
-  maxLeptonEta_(pset.getParameter<double>("maxLeptonEta")),
-  minJetPt_(pset.getParameter<double>("minJetPt")),
-  maxJetEta_(pset.getParameter<double>("maxJetEta")),
-
-  minLeptonPtDilepton_(pset.getParameter<double>("minLeptonPtDilepton")),
-  maxLeptonEtaDilepton_(pset.getParameter<double>("maxLeptonEtaDilepton")),
-  minDileptonMassDilepton_(pset.getParameter<double>("minDileptonMassDilepton")),
-
-  minLeptonPtSemilepton_(pset.getParameter<double>("minLeptonPtSemilepton")),
-  maxLeptonEtaSemilepton_(pset.getParameter<double>("maxLeptonEtaSemilepton")),
-  minVetoLeptonPtSemilepton_(pset.getParameter<double>("minVetoLeptonPtSemilepton")),
-  maxVetoLeptonEtaSemilepton_(pset.getParameter<double>("maxVetoLeptonEtaSemilepton")),
-  minMETSemiLepton_(pset.getParameter<double>("minMETSemiLepton")),
-  minMtWSemiLepton_(pset.getParameter<double>("minMtWSemiLepton"))
+  projection_(pset.getParameter<std::string>("projection")),
 {
   genVertex_ = reco::Particle::Point(0,0,0);
 
@@ -55,8 +36,7 @@ PseudoTopRivetProducer::PseudoTopRivetProducer(const edm::ParameterSet& pset):
 
   produces<reco::GenParticleCollection>();
   
-  rivet_.init();
-
+  rivet_.init(pset);
 }
 
 void PseudoTopRivetProducer::produce(edm::Event& event, const edm::EventSetup& eventSetup)
@@ -80,15 +60,9 @@ void PseudoTopRivetProducer::produce(edm::Event& event, const edm::EventSetup& e
   // Write usual Rivet analyzer like codes below using the Rivet::Event event
   Rivet::Event genEvent(srcHandle->GetEvent());
 
-  /*PseudoTop pseudoTopFS(leptonConeSize_, jetConeSize_, wMass_, tMass_,
-                        minLeptonPt_, maxLeptonEta_, minJetPt_, maxJetEta_,
-                        minLeptonPtDilepton_, maxLeptonEtaDilepton_, minDileptonMassDilepton_,
-                        minLeptonPtSemilepton_, maxLeptonEtaSemilepton_, minVetoLeptonPtSemilepton_, maxVetoLeptonEtaSemilepton_,
-                        minMETSemiLepton_, minMtWSemiLepton_);*/
-  //PseudoTop pseudoTopFS;
-  //auto pseudoTop = genEvent.applyProjection(pseudoTopFS);
-  const PseudoTop& pseudoTop = rivet_.applyProjection<PseudoTop>(genEvent, "ttbar");
+  const PseudoTop& pseudoTop = rivet_.applyProjection<PseudoTop>(genEvent, projection_);
 
+  // Convert into edm objects
   for ( auto p : pseudoTop.neutrinos() ) {
     neutrinos->push_back(reco::GenParticle(p.charge(), p4(p), genVertex_, p.pdgId(), 1, true));
   }

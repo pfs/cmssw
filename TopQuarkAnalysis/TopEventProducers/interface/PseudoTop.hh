@@ -1,6 +1,8 @@
 #ifndef RIVET_PseudoTop_HH
 #define RIVET_PseudoTop_HH
 
+#include "FWCore/ParameterSet/interface/ParameterSet.h"
+
 #include "Rivet/Projections/FinalState.hh"
 #include "Rivet/Particle.hh"
 #include "Rivet/Particle.fhh"
@@ -130,30 +132,36 @@ namespace Rivet {
 
       /// The default constructor. May specify the minimum and maximum
       /// pseudorapidity \f$ \eta \f$ and the min \f$ p_T \f$ (in GeV).
-      PseudoTop(double lepR = 0.1, double lepMinPt = 15, double lepMaxEta = 2.5,
-          double jetR = 0.4, double jetMinPt = 30, double jetMaxEta = 2.4,
-          double minLeptonPtDilepton = 20, double maxLeptonEtaDilepton = 2.4, double minDileptonMassDilepton = 0,
-          double minLeptonPtSemilepton = 30, double maxLeptonEtaSemilepton = 2.1,
-          double minVetoLeptonPtSemilepton = 15, double maxVetoLeptonEtaSemilepton = 2.5,
-          double minMETSemiLepton = 0, double minMtWSemiLepton = 0)
+      PseudoTop(const edm::ParameterSet& pset)
       : FinalState(-MAXDOUBLE, MAXDOUBLE, 0*GeV),
-      _lepR(lepR), _lepMinPt(lepMinPt), _lepMaxEta(lepMaxEta),
-      _jetR(jetR), _jetMinPt(jetMinPt), _jetMaxEta(jetMaxEta),
-      _minLeptonPtDilepton(minLeptonPtDilepton),
-      _maxLeptonEtaDilepton(maxLeptonEtaDilepton),
-      _minDileptonMassDilepton(minDileptonMassDilepton),
-      _minLeptonPtSemilepton(minLeptonPtSemilepton),
-      _maxLeptonEtaSemilepton(maxLeptonEtaSemilepton),
-      _minVetoLeptonPtSemilepton(minVetoLeptonPtSemilepton),
-      _maxVetoLeptonEtaSemilepton(maxVetoLeptonEtaSemilepton),
-      _minMETSemiLepton(minMETSemiLepton),
-      _minMtWSemiLepton(minMtWSemiLepton)
+      
+      _lepR(pset.getParameter<double>("leptonConeSize")),
+      _lepMinPt(pset.getParameter<double>("minLeptonPt")),
+      _lepMaxEta(pset.getParameter<double>("maxLeptonEta")),
+      
+      _jetR(pset.getParameter<double>("jetConeSize")),
+      _jetMinPt(pset.getParameter<double>("minJetPt")),
+      _jetMaxEta(pset.getParameter<double>("maxJetEta")),
+
+      _minLeptonPtDilepton(pset.getParameter<double>("minLeptonPtDilepton")),
+      _maxLeptonEtaDilepton(pset.getParameter<double>("maxLeptonEtaDilepton")),
+      _minDileptonMassDilepton(pset.getParameter<double>("minDileptonMassDilepton")),
+
+      _minLeptonPtSemilepton(pset.getParameter<double>("minLeptonPtSemilepton")),
+      _maxLeptonEtaSemilepton(pset.getParameter<double>("maxLeptonEtaSemilepton")),
+      _minVetoLeptonPtSemilepton(pset.getParameter<double>("minVetoLeptonPtSemilepton")),
+      _maxVetoLeptonEtaSemilepton(pset.getParameter<double>("maxVetoLeptonEtaSemilepton")),
+      _minMETSemiLepton(pset.getParameter<double>("minMETSemiLepton")),
+      _minMtWSemiLepton(pset.getParameter<double>("minMtWSemiLepton")),
+      
+      _tMass(pset.getParameter<double>("tMass")),
+      _wMass(pset.getParameter<double>("wMass"))
       {
         setName("PseudoTop");
         
         // Cuts
         Cut particle_cut = (Cuts::abseta < 6.0) and (Cuts::pT > 0.0*MeV);
-        Cut lepton_cut   = (Cuts::abseta < lepMaxEta) and (Cuts::pT > lepMinPt*GeV);
+        Cut lepton_cut   = (Cuts::abseta < _lepMaxEta) and (Cuts::pT > _lepMinPt*GeV);
         
         // Generic final state
         FinalState fs(Cuts::abseta < 5.);
@@ -163,13 +171,13 @@ namespace Rivet {
         IdentifiedFinalState photons(fs);
         photons.acceptIdPair(PID::PHOTON);
         //HasLeptonParentFinalState photonsFromLepton(photons);
-        DressedLeptons dressed_leptons(photons, charged_leptons, lepR, lepton_cut, true, false);
+        DressedLeptons dressed_leptons(photons, charged_leptons, _lepR, lepton_cut, true, false);
         addProjection(dressed_leptons, "DressedLeptons");
         
         // Jets
         VetoedFinalState fsForJets(fs);
         fsForJets.addVetoOnThisFinalState(dressed_leptons);
-        addProjection(FastJets(fsForJets, FastJets::ANTIKT, jetR), "Jets");
+        addProjection(FastJets(fsForJets, FastJets::ANTIKT, _jetR), "Jets");
         
         // Neutrinos
         IdentifiedFinalState neutrinos(fs);
@@ -230,8 +238,8 @@ namespace Rivet {
       const double _minVetoLeptonPtSemilepton, _maxVetoLeptonEtaSemilepton;
       const double _minMETSemiLepton, _minMtWSemiLepton;
 
-      constexpr static double _tMass = 172.5;
-      constexpr static double _wMass = 80.4;
+      double _tMass = 172.5;
+      double _wMass = 80.4;
 
     private:
       bool _isValid;
