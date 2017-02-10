@@ -8,6 +8,7 @@
 //#include "DataFormats/Math/interface/deltaR.h"
 //#include "CommonTools/Utils/interface/PtComparator.h"
 
+#include "Rivet/Analysis.hh"
 #include "Rivet/Projections/FinalState.hh"
 #include "Rivet/Projections/FastJets.hh"
 #include "Rivet/Projections/IdentifiedFinalState.hh"
@@ -19,6 +20,7 @@
 using namespace std;
 using namespace edm;
 using namespace reco;
+using namespace Rivet;
 
 PseudoTopRivetProducer::PseudoTopRivetProducer(const edm::ParameterSet& pset):
   srcToken_(consumes<edm::HepMCProduct>(pset.getParameter<edm::InputTag>("src"))),
@@ -52,6 +54,8 @@ PseudoTopRivetProducer::PseudoTopRivetProducer(const edm::ParameterSet& pset):
   produces<reco::GenJetCollection>("jets");
 
   produces<reco::GenParticleCollection>();
+  
+  rivet_.init();
 
 }
 
@@ -81,8 +85,9 @@ void PseudoTopRivetProducer::produce(edm::Event& event, const edm::EventSetup& e
                         minLeptonPtDilepton_, maxLeptonEtaDilepton_, minDileptonMassDilepton_,
                         minLeptonPtSemilepton_, maxLeptonEtaSemilepton_, minVetoLeptonPtSemilepton_, maxVetoLeptonEtaSemilepton_,
                         minMETSemiLepton_, minMtWSemiLepton_);*/
-  PseudoTop pseudoTopFS;
-  auto pseudoTop = genEvent.applyProjection(pseudoTopFS);
+  //PseudoTop pseudoTopFS;
+  //auto pseudoTop = genEvent.applyProjection(pseudoTopFS);
+  const PseudoTop& pseudoTop = rivet_.applyProjection<PseudoTop>(genEvent, "ttbar");
 
   for ( auto p : pseudoTop.neutrinos() ) {
     neutrinos->push_back(reco::GenParticle(p.charge(), p4(p), genVertex_, p.pdgId(), 1, true));

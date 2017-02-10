@@ -9,6 +9,8 @@
 #include "DataFormats/Candidate/interface/Candidate.h"
 #include "SimDataFormats/GeneratorProducts/interface/HepMCProduct.h"
 
+#include "TopQuarkAnalysis/TopEventProducers/interface/RivetWrapper.h"
+
 class PseudoTopRivetProducer : public edm::stream::EDProducer<>
 {
 public:
@@ -33,6 +35,8 @@ private:
   const double minMETSemiLepton_, minMtWSemiLepton_;
 
   reco::Particle::Point genVertex_;
+  
+  Rivet::RivetWrapper rivet_;
 
 };
 
