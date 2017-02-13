@@ -3,6 +3,7 @@
 #include "FWCore/Framework/interface/Event.h"
 #include "DataFormats/Candidate/interface/Candidate.h"
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
+#include "DataFormats/Common/interface/RefToPtr.h"
 #include "RecoJets/JetProducers/interface/JetSpecific.h"
 #include "CommonTools/Utils/interface/PtComparator.h"
 //#include "DataFormats/Math/interface/deltaR.h"
@@ -33,6 +34,7 @@ PseudoTopRivetProducer::PseudoTopRivetProducer(const edm::ParameterSet& pset):
   produces<reco::GenParticleCollection>("neutrinos");
   produces<reco::GenParticleCollection>("leptons");
   produces<reco::GenJetCollection>("jets");
+  produces<reco::GenParticleCollection>("jetconsts");
 
   produces<reco::GenParticleCollection>();
   
@@ -47,9 +49,11 @@ void PseudoTopRivetProducer::produce(edm::Event& event, const edm::EventSetup& e
   std::unique_ptr<reco::GenParticleCollection> neutrinos(new reco::GenParticleCollection);
   std::unique_ptr<reco::GenParticleCollection> leptons(new reco::GenParticleCollection);
   std::unique_ptr<reco::GenJetCollection> jets(new reco::GenJetCollection);
+  std::unique_ptr<reco::GenParticleCollection> jetconsts(new reco::GenParticleCollection);
   auto neutrinosRefHandle = event.getRefBeforePut<reco::GenParticleCollection>("neutrinos");
   auto leptonsRefHandle = event.getRefBeforePut<reco::GenParticleCollection>("leptons");
   auto jetsRefHandle = event.getRefBeforePut<reco::GenJetCollection>("jets");
+  auto jetConstsRefHandle = event.getRefBeforePut<reco::GenParticleCollection>("jetconsts");
 
   std::unique_ptr<reco::GenParticleCollection> pseudoTopCands(new reco::GenParticleCollection);
   auto pseudoTopRefHandle = event.getRefBeforePut<reco::GenParticleCollection>();
@@ -73,15 +77,21 @@ void PseudoTopRivetProducer::produce(edm::Event& event, const edm::EventSetup& e
   }
   std::sort(leptons->begin(), leptons->end(), GreaterByPt<reco::Candidate>());
 
+  int iConstituent = 0;
   for ( auto jet : pseudoTop.jets() ) {
     const auto pjet = jet.pseudojet();
 
-    std::vector<reco::CandidatePtr> constituents;
-
     reco::GenJet genJet;
-    reco::writeSpecific(genJet, p4(jet), genVertex_, constituents, eventSetup);
+    genJet.setP4(p4(jet));
+    genJet.setVertex(genVertex_);
     if ( jet.bTagged() ) genJet.setPdgId(5);
     genJet.setJetArea(pjet.has_area() ? pjet.area() : 0);
+    
+    for ( auto p : jet.particles()) {
+      jetconsts->push_back(reco::GenParticle(p.charge(), p4(p), genVertex_, p.pdgId(), 1, true));
+      genJet.addDaughter(edm::refToPtr(reco::GenParticleRef(jetConstsRefHandle, iConstituent)));
+      ++iConstituent;
+    }
 
     jets->push_back(genJet);
   }
@@ -141,6 +151,7 @@ void PseudoTopRivetProducer::produce(edm::Event& event, const edm::EventSetup& e
   event.put(std::move(neutrinos), "neutrinos");
   event.put(std::move(leptons), "leptons");
   event.put(std::move(jets), "jets");
+  event.put(std::move(jetconsts), "jetconsts");
 
   event.put(std::move(pseudoTopCands));
 }
