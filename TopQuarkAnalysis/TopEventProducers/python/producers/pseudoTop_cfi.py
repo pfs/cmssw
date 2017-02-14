@@ -1,8 +1,10 @@
 import FWCore.ParameterSet.Config as cms
 
 pseudoTop = cms.EDProducer("PseudoTopProducer",
-    genParticles = cms.InputTag("prunedGenParticles"),
-    finalStates = cms.InputTag("packedGenParticles"),
+    src = cms.InputTag("genParticles2HepMC:unsmeared"),
+    
+    projection = cms.string("PseudoTop"),
+    
     minLeptonPt = cms.double(15),
     maxLeptonEta = cms.double(2.5),
     minJetPt = cms.double(30),
