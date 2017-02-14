@@ -6,16 +6,8 @@
 #include "DataFormats/Common/interface/RefToPtr.h"
 #include "RecoJets/JetProducers/interface/JetSpecific.h"
 #include "CommonTools/Utils/interface/PtComparator.h"
-//#include "DataFormats/Math/interface/deltaR.h"
-//#include "CommonTools/Utils/interface/PtComparator.h"
 
 #include "Rivet/Analysis.hh"
-#include "Rivet/Projections/FinalState.hh"
-#include "Rivet/Projections/FastJets.hh"
-#include "Rivet/Projections/IdentifiedFinalState.hh"
-#include "Rivet/Projections/VetoedFinalState.hh"
-#include "Rivet/Projections/PromptFinalState.hh"
-#include "Rivet/Projections/DressedLeptons.hh"
 #include "TopQuarkAnalysis/TopEventProducers/interface/PseudoTop.hh"
 
 using namespace std;
@@ -25,8 +17,6 @@ using namespace Rivet;
 
 PseudoTopProducer::PseudoTopProducer(const edm::ParameterSet& pset):
   srcToken_(consumes<edm::HepMCProduct>(pset.getParameter<edm::InputTag>("src"))),
-  //finalStateToken_(consumes<edm::View<reco::Candidate> >(pset.getParameter<edm::InputTag>("finalStates"))),
-  //genParticleToken_(consumes<edm::View<reco::Candidate> >(pset.getParameter<edm::InputTag>("genParticles"))),
   projection_(pset.getParameter<std::string>("projection"))
 {
   genVertex_ = reco::Particle::Point(0,0,0);
@@ -38,6 +28,7 @@ PseudoTopProducer::PseudoTopProducer(const edm::ParameterSet& pset):
 
   produces<reco::GenParticleCollection>();
   
+  // Init projections added in RivetWrapper
   rivet_.init(pset);
 }
 
