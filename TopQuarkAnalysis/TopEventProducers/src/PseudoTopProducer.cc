@@ -22,9 +22,9 @@ PseudoTopProducer::PseudoTopProducer(const edm::ParameterSet& pset):
   genVertex_ = reco::Particle::Point(0,0,0);
 
   produces<reco::GenParticleCollection>("neutrinos");
-  produces<reco::GenParticleCollection>("leptons");
+  produces<reco::GenJetCollection>("leptons");
   produces<reco::GenJetCollection>("jets");
-  produces<reco::GenParticleCollection>("jetconsts");
+  produces<reco::GenParticleCollection>("consts");
 
   produces<reco::GenParticleCollection>();
   
@@ -38,13 +38,13 @@ void PseudoTopProducer::produce(edm::Event& event, const edm::EventSetup& eventS
   typedef reco::Candidate::LorentzVector LorentzVector;
 
   std::unique_ptr<reco::GenParticleCollection> neutrinos(new reco::GenParticleCollection);
-  std::unique_ptr<reco::GenParticleCollection> leptons(new reco::GenParticleCollection);
+  std::unique_ptr<reco::GenJetCollection> leptons(new reco::GenJetCollection);
   std::unique_ptr<reco::GenJetCollection> jets(new reco::GenJetCollection);
-  std::unique_ptr<reco::GenParticleCollection> jetconsts(new reco::GenParticleCollection);
+  std::unique_ptr<reco::GenParticleCollection> consts(new reco::GenParticleCollection);
   auto neutrinosRefHandle = event.getRefBeforePut<reco::GenParticleCollection>("neutrinos");
-  auto leptonsRefHandle = event.getRefBeforePut<reco::GenParticleCollection>("leptons");
+  auto leptonsRefHandle = event.getRefBeforePut<reco::GenJetCollection>("leptons");
   auto jetsRefHandle = event.getRefBeforePut<reco::GenJetCollection>("jets");
-  auto jetConstsRefHandle = event.getRefBeforePut<reco::GenParticleCollection>("jetconsts");
+  auto constsRefHandle = event.getRefBeforePut<reco::GenParticleCollection>("consts");
 
   std::unique_ptr<reco::GenParticleCollection> pseudoTopCands(new reco::GenParticleCollection);
   auto pseudoTopRefHandle = event.getRefBeforePut<reco::GenParticleCollection>();
@@ -63,12 +63,29 @@ void PseudoTopProducer::produce(edm::Event& event, const edm::EventSetup& eventS
   }
   std::sort(neutrinos->begin(), neutrinos->end(), GreaterByPt<reco::Candidate>());
 
-  for ( auto p : pseudoTop.leptons() ) {
-    leptons->push_back(reco::GenParticle(p.charge(), p4(p), genVertex_, p.pdgId(), 1, true));
-  }
-  std::sort(leptons->begin(), leptons->end(), GreaterByPt<reco::Candidate>());
-
   int iConstituent = 0;
+  for ( auto lepton : pseudoTop.leptons() ) {
+    reco::GenJet lepJet;
+    lepJet.setP4(p4(lepton));
+    lepJet.setVertex(genVertex_);
+    lepJet.setPdgId(lepton.pdgId());
+    lepJet.setCharge(lepton.charge());
+    
+    const auto cl = lepton.constituentLepton();
+    consts->push_back(reco::GenParticle(cl.charge(), p4(cl), genVertex_, cl.pdgId(), 1, true));
+    lepJet.addDaughter(edm::refToPtr(reco::GenParticleRef(constsRefHandle, iConstituent)));
+    ++iConstituent;
+    
+    for ( auto p : lepton.constituentPhotons()) {
+      consts->push_back(reco::GenParticle(p.charge(), p4(p), genVertex_, p.pdgId(), 1, true));
+      lepJet.addDaughter(edm::refToPtr(reco::GenParticleRef(constsRefHandle, iConstituent)));
+      ++iConstituent;
+    }
+    
+    leptons->push_back(lepJet);
+  }
+  std::sort(leptons->begin(), leptons->end(), GreaterByPt<reco::GenJet>());
+
   for ( auto jet : pseudoTop.jets() ) {
     const auto pjet = jet.pseudojet();
 
@@ -79,8 +96,8 @@ void PseudoTopProducer::produce(edm::Event& event, const edm::EventSetup& eventS
     genJet.setJetArea(pjet.has_area() ? pjet.area() : 0);
     
     for ( auto p : jet.particles()) {
-      jetconsts->push_back(reco::GenParticle(p.charge(), p4(p), genVertex_, p.pdgId(), 1, true));
-      genJet.addDaughter(edm::refToPtr(reco::GenParticleRef(jetConstsRefHandle, iConstituent)));
+      consts->push_back(reco::GenParticle(p.charge(), p4(p), genVertex_, p.pdgId(), 1, true));
+      genJet.addDaughter(edm::refToPtr(reco::GenParticleRef(constsRefHandle, iConstituent)));
       ++iConstituent;
     }
 
@@ -142,7 +159,7 @@ void PseudoTopProducer::produce(edm::Event& event, const edm::EventSetup& eventS
   event.put(std::move(neutrinos), "neutrinos");
   event.put(std::move(leptons), "leptons");
   event.put(std::move(jets), "jets");
-  event.put(std::move(jetconsts), "jetconsts");
+  event.put(std::move(consts), "consts");
 
   event.put(std::move(pseudoTopCands));
 }
