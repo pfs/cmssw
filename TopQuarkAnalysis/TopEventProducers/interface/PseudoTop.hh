@@ -72,7 +72,7 @@ namespace Rivet {
         
         // Jets
         VetoedFinalState fsForJets(fs);
-        fsForJets.addVetoOnThisFinalState(dressed_leptons);
+        //fsForJets.addVetoOnThisFinalState(dressed_leptons);
         addProjection(FastJets(fsForJets, FastJets::ANTIKT, _jetR), "Jets");
         
         // Neutrinos
