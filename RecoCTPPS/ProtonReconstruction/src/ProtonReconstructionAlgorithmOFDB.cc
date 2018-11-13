@@ -163,7 +163,11 @@ void ProtonReconstructionAlgorithmOFDB::Init(double xangle)
     unsigned int decRPId = rpId.arm()*100 + rpId.station()*10 + rpId.rp();
     sprintf(buf, "%u", decRPId);
     gDirectory = f_debug->mkdir(buf);
+
     g_xi_vs_x->Write("g_xi_vs_x");
+    g_x0_vs_xi->Write("g_x0_vs_xi");
+    g_L_x_vs_xi->Write("g_L_x_vs_xi");
+
     g_y0_vs_xi->Write("g_y0_vs_xi");
     g_v_y_vs_xi->Write("g_v_y_vs_xi");
     g_L_y_vs_xi->Write("g_L_y_vs_xi");
@@ -242,6 +246,22 @@ void ProtonReconstructionAlgorithmOFDB::Release()
 ProtonReconstructionAlgorithmOFDB::~ProtonReconstructionAlgorithmOFDB()
 {
   Release();
+
+  /*
+  TFile *f_validation = TFile::Open("validation.root", "recreate");
+
+  for (const auto &p : m_rp_de_xy)
+  {
+    char buf[100];
+    sprintf(buf, "RP %u", p.first);
+    gDirectory = f_validation->mkdir(buf);
+
+    p.second.first->Write("h_de_x");
+    p.second.second->Write("h_de_y");
+  }
+
+  delete f_validation;
+  */
 }
 
 //----------------------------------------------------------------------------------------------------
@@ -461,9 +481,42 @@ void ProtonReconstructionAlgorithmOFDB::reconstructFromMultiRP(const vector<cons
 
   const double max_chi_sq = 1. + 3. * pt.fitNDF;
 
-  pt.setValid(result.IsValid() && pt.fitChiSq < max_chi_sq);
+  const bool valid = result.IsValid() && pt.fitChiSq < max_chi_sq;
+  pt.setValid(valid);
+
+  if (verbosity && !valid)
+    printf("WARNING: invalid proton-reconstruction fit (result.IsValid = %u, fitChiSq = %.2E).\n", result.IsValid(), pt.fitChiSq);
 
   out.push_back(move(pt));
+
+  // fill validation plots
+  /*
+  for (const auto &track : tracks)
+  {
+    CTPPSDetId id(track->getRPId());
+    unsigned int rpDecId = id.arm()*100 + id.station()*10 + id.rp();
+
+    const double x_input = track->getX() * 1e-3, y_input = track->getY() * 1e-3;
+
+    const double xi = params[0], th_x = params[1], vtx_x = 0., th_y = params[2], vtx_y = params[3];
+
+    auto oit = m_rp_optics_.find(id);
+    double kin_in[5] = { vtx_x, th_x, vtx_y, th_y, xi };
+    double kin_out[5];
+    oit->second.optics->Transport(kin_in, kin_out);
+
+    const double x_reproduced = kin_out[0], y_reproduced = kin_out[2];
+
+    auto it = m_rp_de_xy.find(rpDecId);
+    if (it == m_rp_de_xy.end())
+    {
+      it = m_rp_de_xy.insert({rpDecId, { new TH1D("", ";De x   (m)", 100, -5E-6, +5E-6), new TH1D("", ";De y   (m)", 100, -5E-6, +5E-6) } }).first;
+    }
+
+    it->second.first->Fill(x_reproduced - x_input);
+    it->second.second->Fill(y_reproduced - y_input);
+  }
+  */
 }
 
 //----------------------------------------------------------------------------------------------------

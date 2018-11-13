@@ -20,6 +20,7 @@
 #include "TFile.h"
 #include "TSpline.h"
 #include "Fit/Fitter.h"
+#include "TH1D.h"
 
 #include <map>
 #include <string>
@@ -99,6 +100,9 @@ class ProtonReconstructionAlgorithmOFDB
 
     /// object to calculate chi^2
     std::unique_ptr<ChiSquareCalculator> chiSquareCalculator_;
+
+    /// validation plots
+    //std::map<unsigned int, std::pair<TH1D*, TH1D*>> m_rp_de_xy;
 };
 
 #endif
