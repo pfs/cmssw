@@ -52,7 +52,7 @@ class OpticalFunctionsPlotter : public edm::one::EDAnalyzer<edm::one::SharedReso
 
     // book graphs
     std::map<std::string,TGraph*> g_x0_vs_xi, g_y0_vs_xi, g_y0_vs_x0, g_y0_vs_x0so, g_y0so_vs_x0so;
-    std::map<std::string,TGraph*> g_v_x_vs_xi, g_L_x_vs_xi, g_v_y_vs_xi, g_L_y_vs_xi;
+    std::map<std::string,TGraph*> g_D_x_vs_xi, g_v_x_vs_xi, g_L_x_vs_xi, g_D_y_vs_xi, g_v_y_vs_xi, g_L_y_vs_xi;
     std::map<std::string,TGraph*> g_xi_vs_x, g_xi_vs_xso;
      
 };
@@ -77,11 +77,6 @@ OpticalFunctionsPlotter::OpticalFunctionsPlotter( const edm::ParameterSet& iConf
 {
   usesResource( "TFileService" );
 
-  printf(">> OpticalFunctionsPlotter::OpticalFunctionsPlotter\n");
-  printf("    vtx0_x_45 = %.3E m, vtx0_x_56 = %.3E m\n", vtx0_x_45_, vtx0_x_56_);
-  printf("    vtx0_y_45 = %.3E m, vtx0_y_56 = %.3E m\n", vtx0_y_45_, vtx0_y_56_);
-  printf("    xangle_45 = %.1f urad, xangle_56 = %.1f urad\n", half_crossing_angle_45_ * 1E6, half_crossing_angle_56_ * 1E6);
-
   // prepare output
   edm::Service<TFileService> fs;
 
@@ -92,29 +87,43 @@ OpticalFunctionsPlotter::OpticalFunctionsPlotter( const edm::ParameterSet& iConf
     g_x0_vs_xi[objName] = dir.make<TGraph>();
     g_x0_vs_xi[objName]->SetName( "g_x0_vs_xi" );
     g_x0_vs_xi[objName]->SetTitle( ";#xi;x_{0}" );
+
     g_y0_vs_xi[objName] = dir.make<TGraph>();
     g_y0_vs_xi[objName]->SetName( "g_y0_vs_xi" );
     g_y0_vs_xi[objName]->SetTitle( ";#xi;y_{0}" );
+
     g_y0_vs_x0[objName] = dir.make<TGraph>();
     g_y0_vs_x0[objName]->SetName( "g_y0_vs_x0" );
     g_y0_vs_x0[objName]->SetTitle( ";x_{0};y_{0}" );
+
     g_y0_vs_x0so[objName] = dir.make<TGraph>();
     g_y0_vs_x0so[objName]->SetName( "g_y0_vs_x0so" );
     g_y0_vs_x0so[objName]->SetTitle( ";#hat{x}_{0};y_{0}" );
+
     g_y0so_vs_x0so[objName] = dir.make<TGraph>();
     g_y0so_vs_x0so[objName]->SetName( "g_y0so_vs_x0so" );
     g_y0so_vs_x0so[objName]->SetTitle( ";#hat{x}_{0};#hat{y}_{0}" );
 
+    g_D_x_vs_xi[objName] = dir.make<TGraph>();
+    g_D_x_vs_xi[objName]->SetName( "g_D_x_vs_xi" );
+    g_D_x_vs_xi[objName]->SetTitle( ";#xi;D_{x}" );
+
     g_v_x_vs_xi[objName] = dir.make<TGraph>();
     g_v_x_vs_xi[objName]->SetName( "g_v_x_vs_xi" );
     g_v_x_vs_xi[objName]->SetTitle( ";#xi;v_{x}" );
+
     g_L_x_vs_xi[objName] = dir.make<TGraph>();
     g_L_x_vs_xi[objName]->SetName( "g_L_x_vs_xi" );
     g_L_x_vs_xi[objName]->SetTitle( ";#xi;L_{x}" );
 
+    g_D_y_vs_xi[objName] = dir.make<TGraph>();
+    g_D_y_vs_xi[objName]->SetName( "g_D_y_vs_xi" );
+    g_D_y_vs_xi[objName]->SetTitle( ";#xi;D_{y}" );
+
     g_v_y_vs_xi[objName] = dir.make<TGraph>();
     g_v_y_vs_xi[objName]->SetName( "g_v_y_vs_xi" );
     g_v_y_vs_xi[objName]->SetTitle( ";#xi;v_{y}" );
+
     g_L_y_vs_xi[objName] = dir.make<TGraph>();
     g_L_y_vs_xi[objName]->SetName( "g_L_y_vs_xi" );
     g_L_y_vs_xi[objName]->SetTitle( ";#xi;L_{y}" );
@@ -122,6 +131,7 @@ OpticalFunctionsPlotter::OpticalFunctionsPlotter( const edm::ParameterSet& iConf
     g_xi_vs_x[objName] = dir.make<TGraph>();
     g_xi_vs_x[objName]->SetName( "g_xi_vs_x" );
     g_xi_vs_x[objName]->SetTitle( ";x;#xi" );
+
     g_xi_vs_xso[objName] = dir.make<TGraph>();
     g_xi_vs_xso[objName]->SetName( "g_xi_vs_xso" );
     g_xi_vs_xso[objName]->SetTitle( ";#hat{x};#xi" );
@@ -140,7 +150,11 @@ OpticalFunctionsPlotter::beginJob()
 {
   std::ostringstream oss;
 
-  printf("file = %s\n", opticsFile_.fullPath().c_str());
+  printf(">> OpticalFunctionsPlotter::beginJob\n");
+  printf("    vtx0_x_45 = %.3E m, vtx0_x_56 = %.3E m\n", vtx0_x_45_, vtx0_x_56_);
+  printf("    vtx0_y_45 = %.3E m, vtx0_y_56 = %.3E m\n", vtx0_y_45_, vtx0_y_56_);
+  printf("    xangle_45 = %.1f urad, xangle_56 = %.1f urad\n", half_crossing_angle_45_ * 1E6, half_crossing_angle_56_ * 1E6);
+  printf("    file = %s\n", opticsFile_.fullPath().c_str());
 
   // open input file
   auto f_in = std::make_unique<TFile>( opticsFile_.fullPath().c_str() );
@@ -148,8 +162,9 @@ OpticalFunctionsPlotter::beginJob()
     throw cms::Exception("OpticalFunctionsPlotter") << "Cannot open file '" << opticsFile_ << "'.";
 
   // go through all optics objects
-  for ( const auto& objName : opticsObjects_ ) {
-    printf("\n* %s\n", objName.c_str());
+  for ( const auto& objName : opticsObjects_ )
+  {
+    printf("    %s\n", objName.c_str());
 
     const auto optApp = dynamic_cast<LHCOpticsApproximator*>( f_in->Get( objName.c_str() ) );
     if (!optApp)
@@ -182,14 +197,21 @@ OpticalFunctionsPlotter::beginJob()
     kin_in_zero = { { vtx0_x, crossing_angle, vtx0_y, 0.0, 0.0 } };
     optApp->Transport( kin_in_zero.data(), kin_out_zero.data(), check_apertures, invert_beam_coord_systems );
 
-    printf("    beam position: x = %.3E m, y = %.3E m\n", kin_out_zero[0], kin_out_zero[2]);
+    printf("        beam position: x = %.3E m, y = %.3E m\n", kin_out_zero[0], kin_out_zero[2]);
 
     // sample curves
-    for ( double xi=minXi_; xi<=maxXi_; xi+=xiStep_ ) {
+    for ( double xi=minXi_; xi<=maxXi_; xi+=xiStep_ )
+    {
+      const double ep = 1E-4;
+
       // input: only xi
       std::array<double,5> kin_in_xi = { { vtx0_x, crossing_angle * ( 1.-xi ), vtx0_y, 0.0, -xi } }, kin_out_xi;
       optApp->Transport( kin_in_xi.data(), kin_out_xi.data(), check_apertures, invert_beam_coord_systems );
   
+      // input: only xi+ep
+      std::array<double,5> kin_in_xi_ep = { { vtx0_x, crossing_angle * ( 1.-(xi+ep) ), vtx0_y, 0.0, -(xi+ep) } }, kin_out_xi_ep;
+      optApp->Transport( kin_in_xi_ep.data(), kin_out_xi_ep.data(), check_apertures, invert_beam_coord_systems );
+
       // input: xi and vtx_x (vertex size)
       std::array<double,5> kin_in_xi_vtx_x = { { vtx0_x + vertex_size_, crossing_angle * ( 1.-xi ), vtx0_y, 0.0, -xi } }, kin_out_xi_vtx_x;
       optApp->Transport( kin_in_xi_vtx_x.data(), kin_out_xi_vtx_x.data(), check_apertures, invert_beam_coord_systems );
@@ -214,9 +236,11 @@ OpticalFunctionsPlotter::beginJob()
       g_y0_vs_x0so[objName]->SetPoint( idx, kin_out_xi[0]-kin_out_zero[0], kin_out_xi[2] );
       g_y0so_vs_x0so[objName]->SetPoint( idx, kin_out_xi[0]-kin_out_zero[0], kin_out_xi[2]-kin_out_zero[2] );
 
+      g_D_x_vs_xi[objName]->SetPoint( idx, xi, ( kin_out_xi_ep[0]-kin_out_xi[0] )/ep );
       g_v_x_vs_xi[objName]->SetPoint( idx, xi, ( kin_out_xi_vtx_x[0]-kin_out_xi[0] )/vertex_size_ );
       g_L_x_vs_xi[objName]->SetPoint( idx, xi, ( kin_out_xi_th_x[0]-kin_out_xi[0] )/beam_divergence_ );
 
+      g_D_y_vs_xi[objName]->SetPoint( idx, xi, ( kin_out_xi_ep[2]-kin_out_xi[2] )/ep );
       g_v_y_vs_xi[objName]->SetPoint( idx, xi, ( kin_out_xi_vtx_y[2]-kin_out_xi[2] )/vertex_size_ );
       g_L_y_vs_xi[objName]->SetPoint( idx, xi, ( kin_out_xi_th_y[2]-kin_out_xi[2] )/beam_divergence_ );
 
