@@ -5,11 +5,16 @@ lhcBeamConditions = cms.PSet(
     vertexSize = cms.double(10.e-6), # in m
     beamDivergence = cms.double(20.e-6), # in rad
 
-    # vertex vertical offset in both sectors
-    yOffsetSector45 = cms.double(300.e-6), # in m
-    yOffsetSector56 = cms.double(200.e-6), # in m
+    # vertex offset in both sectors
+    #xOffsetSector45 = cms.double(0), # in m
+    #xOffsetSector56 = cms.double(0), # in m
+    xOffsetSector45 = cms.double(0.00055266), # in m
+    xOffsetSector56 = cms.double(0.00055266), # in m
+
+    yOffsetSector45 = cms.double(-0.0015), # in m
+    yOffsetSector56 = cms.double(-0.0015), # in m
 
     # crossing angle
-    halfCrossingAngleSector45 = cms.double(179.394e-6), # in rad
-    halfCrossingAngleSector56 = cms.double(191.541e-6), # in rad
+    halfCrossingAngleSector45 = cms.double(120e-6), # in rad
+    halfCrossingAngleSector56 = cms.double(120e-6), # in rad
 )
