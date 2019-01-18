@@ -66,6 +66,9 @@ class PPXZGeneratorValidation : public edm::one::EDAnalyzer<>
       TH1D *h_p_T_l_pl, *h_p_z_l_pl, *h_p_tot_l_pl, *h_theta_l_pl, *h_eta_l_pl;
       TH1D *h_p_T_l_mi, *h_p_z_l_mi, *h_p_tot_l_mi, *h_theta_l_mi, *h_eta_l_mi;
 
+      TH1D *h_p_T_l_le, *h_p_z_l_le, *h_p_tot_l_le, *h_theta_l_le, *h_eta_l_le;
+      TH1D *h_p_T_l_sl, *h_p_z_l_sl, *h_p_tot_l_sl, *h_theta_l_sl, *h_eta_l_sl;
+
       TH1D *h_angle_X_Z, *h_angle_l_pl_l_mi, *h_angle_X_pr1_X_pr2, *h_angle_Z_X_pr1, *h_angle_Z_X_pr2;
       TH1D *h_angleT_X_Z, *h_angleT_l_pl_l_mi, *h_angleT_X_pr1_X_pr2, *h_angleT_Z_X_pr1, *h_angleT_Z_X_pr2;
 
@@ -113,6 +116,18 @@ class PPXZGeneratorValidation : public edm::one::EDAnalyzer<>
         h_theta_l_mi = new TH1D("", "theta(l_mi)", 100, -0.1, 3.3);
         h_eta_l_mi = new TH1D("", "eta(l_mi)", 100, -5., 5.);
 
+        h_p_T_l_le = new TH1D("", "p_{T}(l_le)   (GeV)", 100, 0., 180.);
+        h_p_z_l_le = new TH1D("", "p_{z}(l_le)   (GeV)", 100, -300., 300.);
+        h_p_tot_l_le = new TH1D("", "p(l_le)   (GeV)", 100, 0., 300.);
+        h_theta_l_le = new TH1D("", "theta(l_le)", 100, -0.1, 3.3);
+        h_eta_l_le = new TH1D("", "eta(l_le)", 100, -5., 5.);
+
+        h_p_T_l_sl = new TH1D("", "p_{T}(l_sl)   (GeV)", 100, 0., 180.);
+        h_p_z_l_sl = new TH1D("", "p_{z}(l_sl)   (GeV)", 100, -300., 300.);
+        h_p_tot_l_sl = new TH1D("", "p(l_sl)   (GeV)", 100, 0., 300.);
+        h_theta_l_sl = new TH1D("", "theta(l_sl)", 100, -0.1, 3.3);
+        h_eta_l_sl = new TH1D("", "eta(l_sl)", 100, -5., 5.);
+
         h_angle_X_Z = new TH1D("", "angle(X, Z)", 100, -1E-3, M_PI + 1E-3);
         h_angle_l_pl_l_mi = new TH1D("", "angle(l_pl, l_mi)", 100, -1E-3, M_PI + 1E-3);
         h_angle_X_pr1_X_pr2 = new TH1D("", "angle(X_pr1, X_pr2)", 100, -1E-3, M_PI + 1E-3);
@@ -134,6 +149,17 @@ class PPXZGeneratorValidation : public edm::one::EDAnalyzer<>
       {
         if (h_m_Z == NULL)
           init();
+
+        // leading and sub-leading lepton
+        CLHEP::HepLorentzVector momentum_l_le, momentum_l_sl;
+        if (momentum_l_pl.perp() > momentum_l_mi.perp())
+        {
+          momentum_l_le = momentum_l_pl;
+          momentum_l_sl = momentum_l_mi;
+        } else {
+          momentum_l_le = momentum_l_mi;
+          momentum_l_sl = momentum_l_pl;
+        }
 
         CLHEP::Hep3Vector momentumT_X(momentum_X.x(), momentum_X.y(), 0.);
         CLHEP::Hep3Vector momentumT_X_pr1(momentum_X_pr1.x(), momentum_X_pr1.y(), 0.);
@@ -186,6 +212,18 @@ class PPXZGeneratorValidation : public edm::one::EDAnalyzer<>
         h_p_tot_l_mi->Fill(momentum_l_mi.rho());
         h_theta_l_mi->Fill(momentum_l_mi.theta());
         h_eta_l_mi->Fill(momentum_l_mi.pseudoRapidity());
+
+        h_p_T_l_le->Fill(momentum_l_le.perp());
+        h_p_z_l_le->Fill(momentum_l_le.z());
+        h_p_tot_l_le->Fill(momentum_l_le.rho());
+        h_theta_l_le->Fill(momentum_l_le.theta());
+        h_eta_l_le->Fill(momentum_l_le.pseudoRapidity());
+
+        h_p_T_l_sl->Fill(momentum_l_sl.perp());
+        h_p_z_l_sl->Fill(momentum_l_sl.z());
+        h_p_tot_l_sl->Fill(momentum_l_sl.rho());
+        h_theta_l_sl->Fill(momentum_l_sl.theta());
+        h_eta_l_sl->Fill(momentum_l_sl.pseudoRapidity());
 
         h_angle_X_Z->Fill(momentum_X.angle(momentum_Z));
         h_angle_l_pl_l_mi->Fill(momentum_l_pl.angle(momentum_l_mi));
@@ -249,6 +287,18 @@ class PPXZGeneratorValidation : public edm::one::EDAnalyzer<>
         h_p_tot_l_mi->Write("h_p_tot_l_mi");
         h_theta_l_mi->Write("h_theta_l_mi");
         h_eta_l_mi->Write("h_eta_l_mi");
+
+        h_p_T_l_le->Write("h_p_T_l_le");
+        h_p_z_l_le->Write("h_p_z_l_le");
+        h_p_tot_l_le->Write("h_p_tot_l_le");
+        h_theta_l_le->Write("h_theta_l_le");
+        h_eta_l_le->Write("h_eta_l_le");
+
+        h_p_T_l_sl->Write("h_p_T_l_sl");
+        h_p_z_l_sl->Write("h_p_z_l_sl");
+        h_p_tot_l_sl->Write("h_p_tot_l_sl");
+        h_theta_l_sl->Write("h_theta_l_sl");
+        h_eta_l_sl->Write("h_eta_l_sl");
 
         h_angle_X_Z->Write("h_angle_X_Z");
         h_angle_l_pl_l_mi->Write("h_angle_l_pl_l_mi");
