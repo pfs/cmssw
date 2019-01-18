@@ -46,6 +46,9 @@ class CTPPSProtonReconstructionValidator : public edm::one::EDAnalyzer<>
     void FillPlots(unsigned int meth_idx, unsigned int idx, const reco::ProtonTrack &rec_pr,
       const HepMC::FourVector &vtx, const HepMC::FourVector &mom);
 
+    void FillPlotsDoubleArm(unsigned int meth_idx, const HepMC::FourVector &mom_45, const HepMC::FourVector &mom_56,
+      const reco::ProtonTrack &rec_pr_45, const reco::ProtonTrack &rec_pr_56);
+
     edm::EDGetTokenT<edm::HepMCProduct> tokenHepMCBeforeSmearing;
     edm::EDGetTokenT<edm::HepMCProduct> tokenHepMCAfterSmearing;
     edm::EDGetTokenT<std::vector<reco::ProtonTrack>> tokenRecoProtons;
@@ -157,6 +160,54 @@ class CTPPSProtonReconstructionValidator : public edm::one::EDAnalyzer<>
     };
 
     std::map<unsigned int, std::map<unsigned int, PlotGroup>> plots;
+
+    struct PlotGroupDoubleArm
+    {
+      TH1D *h_de_m = NULL;
+      TProfile *p_de_m_vs_m_simu;
+
+      void Init()
+      {
+        h_de_m = new TH1D("", ";m_{reco} - m_{simu}", 100, 0., 0.);
+        p_de_m_vs_m_simu = new TProfile("", ";m_{simu};m_{reco} - m_{simu}", 200, 000., 2000.);
+      }
+
+      static TGraphErrors* ProfileToRMSGraph(TProfile *p, const std::string &name = "")
+      {
+          TGraphErrors *g = new TGraphErrors();
+          g->SetName(name.c_str());
+
+          for (int bi = 1; bi <= p->GetNbinsX(); ++bi)
+          {
+              double c = p->GetBinCenter(bi);
+              double w = p->GetBinWidth(bi);
+
+              double N = p->GetBinEntries(bi);
+              double Sy = p->GetBinContent(bi) * N;
+              double Syy = p->GetSumw2()->At(bi);
+
+              double si_sq = Syy/N - Sy*Sy/N/N;
+              double si = (si_sq >= 0.) ? sqrt(si_sq) : 0.;
+              double si_unc_sq = si_sq / 2. / N;	// Gaussian approximation
+              double si_unc = (si_unc_sq >= 0.) ? sqrt(si_unc_sq) : 0.;
+
+              int idx = g->GetN();
+              g->SetPoint(idx, c, si);
+              g->SetPointError(idx, w/2., si_unc);
+          }
+
+          return g;
+      }
+
+      void Write() const
+      {
+        h_de_m->Write("h_de_m");
+        p_de_m_vs_m_simu->Write("p_de_m_vs_m_simu");
+        ProfileToRMSGraph(p_de_m_vs_m_simu, "g_rms_de_m_vs_m_simu")->Write();
+      }
+    };
+
+    std::map<unsigned int, PlotGroupDoubleArm> plotsDoubleArm;
 };
 
 //----------------------------------------------------------------------------------------------------
@@ -268,7 +319,7 @@ void CTPPSProtonReconstructionValidator::analyze(const edm::Event& iEvent, const
   // TODO
   //printf("proton_45_set=%u, proton_56_set=%u\n", proton_45_set, proton_56_set);
 
-  // do comparison
+  // do single-arm comparison
   for (const auto &rec_pr : *hRecoProtons)
   {
     if (! rec_pr.valid())
@@ -307,6 +358,48 @@ void CTPPSProtonReconstructionValidator::analyze(const edm::Event& iEvent, const
 
     FillPlots(meth_idx, idx, rec_pr, vtx, mom);
   }
+
+  // do double-arm comparison
+  if (!proton_45_set || !proton_56_set)
+    return;
+
+  unsigned int rpDecId_45 = 0, rpDecId_56 = 0;
+
+  reco::ProtonTrack rec_pr_single_45; rec_pr_single_45.setValid(false);
+  reco::ProtonTrack rec_pr_single_56; rec_pr_single_56.setValid(false);
+
+  reco::ProtonTrack rec_pr_multi_45; rec_pr_multi_45.setValid(false);
+  reco::ProtonTrack rec_pr_multi_56; rec_pr_multi_56.setValid(false);
+
+  for (const auto &rec_pr : *hRecoProtons)
+  {
+    if (! rec_pr.valid())
+      continue;
+
+    if (rec_pr.method == reco::ProtonTrack::rmSingleRP)
+    {
+      CTPPSDetId rpId(* rec_pr.contributingRPIds.begin());
+      unsigned int rpDecId = 100*rpId.arm() + 10*rpId.station() + rpId.rp();
+
+      if (rec_pr.lhcSector == reco::ProtonTrack::sector45 && rpDecId > rpDecId_45)
+        { rec_pr_single_45 = rec_pr; rpDecId_45 = rpDecId; }
+
+      if (rec_pr.lhcSector == reco::ProtonTrack::sector56 && rpDecId > rpDecId_56)
+        { rec_pr_single_56 = rec_pr; rpDecId_56 = rpDecId; }
+    }
+
+    if (rec_pr.method == reco::ProtonTrack::rmMultiRP)
+    {
+      if (rec_pr.lhcSector == reco::ProtonTrack::sector45)
+        rec_pr_multi_45 = rec_pr;
+
+      if (rec_pr.lhcSector == reco::ProtonTrack::sector56)
+        rec_pr_multi_56 = rec_pr;
+    }
+  }
+
+  FillPlotsDoubleArm(0, mom_45, mom_56, rec_pr_single_45, rec_pr_single_56);
+  FillPlotsDoubleArm(1, mom_45, mom_56, rec_pr_multi_45, rec_pr_multi_56);
 }
 
 //----------------------------------------------------------------------------------------------------
@@ -368,6 +461,33 @@ void CTPPSProtonReconstructionValidator::FillPlots(unsigned int meth_idx, unsign
 
 //----------------------------------------------------------------------------------------------------
 
+void CTPPSProtonReconstructionValidator::FillPlotsDoubleArm(unsigned int meth_idx, const HepMC::FourVector &mom_45, const HepMC::FourVector &mom_56,
+  const reco::ProtonTrack &rec_pr_45, const reco::ProtonTrack &rec_pr_56)
+{
+  if (!rec_pr_45.valid() || !rec_pr_56.valid())
+    return;
+
+  const double p_nom = 6500.;
+  const double s = 4. * p_nom * p_nom;
+
+  const double xi_simu_45 = (p_nom - mom_45.e()) / p_nom;
+  const double xi_simu_56 = (p_nom - mom_56.e()) / p_nom;
+  const double m_simu = sqrt(s * xi_simu_45 * xi_simu_56);
+
+  const double xi_reco_45 = rec_pr_45.xi();
+  const double xi_reco_56 = rec_pr_56.xi();
+  const double m_reco = sqrt(s * xi_reco_45 * xi_reco_56);
+
+  auto &p = plotsDoubleArm[meth_idx];
+  if (p.h_de_m == NULL)
+    p.Init();
+
+  p.h_de_m->Fill(m_reco - m_simu);
+  p.p_de_m_vs_m_simu->Fill(m_simu, m_reco - m_simu);
+}
+
+//----------------------------------------------------------------------------------------------------
+
 void CTPPSProtonReconstructionValidator::beginJob()
 {
 }
@@ -393,6 +513,17 @@ void CTPPSProtonReconstructionValidator::endJob()
       gDirectory = d_element;
       eit.second.Write();
     }
+  }
+
+  for (const auto &mit : plotsDoubleArm)
+  {
+    string method = (mit.first == 0) ? "single rp" : "multi rp";
+    TDirectory *d_method = (TDirectory *) f_out->Get(method.c_str());
+
+    TDirectory *d_element = d_method->mkdir("double arm");
+
+    gDirectory = d_element;
+    mit.second.Write();
   }
 
   delete f_out;
