@@ -1,0 +1,30 @@
+#!/bin/bash
+
+masses=(
+#	800
+	1000
+	1200
+	1400
+#	1600
+)
+
+function RunOneMass()
+{
+	dir="m_X_$mass"
+	mkdir -p "$dir"
+
+	cat "template_cfg.py"|sed "\
+			s|\$mass|$mass|g\
+		" > "$dir/cfg.py"
+
+	cd "$dir"
+
+	cmsRun "cfg.py" &> "log" &
+
+	cd - &> /dev/null
+}
+
+for mass in ${masses[*]}
+do
+	RunOneMass $mass
+done
