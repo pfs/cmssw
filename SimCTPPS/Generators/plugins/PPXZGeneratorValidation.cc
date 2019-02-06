@@ -68,6 +68,8 @@ class PPXZGeneratorValidation : public edm::one::EDAnalyzer<>
 
       TH1D *h_p_T_l_le, *h_p_z_l_le, *h_p_tot_l_le, *h_theta_l_le, *h_eta_l_le;
       TH1D *h_p_T_l_sl, *h_p_z_l_sl, *h_p_tot_l_sl, *h_theta_l_sl, *h_eta_l_sl;
+      TH1D *h_p_T_l_le_cut50;
+      TH1D *h_p_T_l_sl_cut50;
 
       TH1D *h_angle_X_Z, *h_angle_l_pl_l_mi, *h_angle_X_pr1_X_pr2, *h_angle_Z_X_pr1, *h_angle_Z_X_pr2;
       TH1D *h_angleT_X_Z, *h_angleT_l_pl_l_mi, *h_angleT_X_pr1_X_pr2, *h_angleT_Z_X_pr1, *h_angleT_Z_X_pr2;
@@ -121,12 +123,14 @@ class PPXZGeneratorValidation : public edm::one::EDAnalyzer<>
         h_p_tot_l_le = new TH1D("", "p(l_le)   (GeV)", 100, 0., 300.);
         h_theta_l_le = new TH1D("", "theta(l_le)", 100, -0.1, 3.3);
         h_eta_l_le = new TH1D("", "eta(l_le)", 100, -5., 5.);
+        h_p_T_l_le_cut50 = new TH1D("", "p_{T}(l_le)   (GeV)", 100, 0., 180.);
 
         h_p_T_l_sl = new TH1D("", "p_{T}(l_sl)   (GeV)", 100, 0., 180.);
         h_p_z_l_sl = new TH1D("", "p_{z}(l_sl)   (GeV)", 100, -300., 300.);
         h_p_tot_l_sl = new TH1D("", "p(l_sl)   (GeV)", 100, 0., 300.);
         h_theta_l_sl = new TH1D("", "theta(l_sl)", 100, -0.1, 3.3);
         h_eta_l_sl = new TH1D("", "eta(l_sl)", 100, -5., 5.);
+        h_p_T_l_sl_cut50 = new TH1D("", "p_{T}(l_sl)   (GeV)", 100, 0., 180.);
 
         h_angle_X_Z = new TH1D("", "angle(X, Z)", 100, -1E-3, M_PI + 1E-3);
         h_angle_l_pl_l_mi = new TH1D("", "angle(l_pl, l_mi)", 100, -1E-3, M_PI + 1E-3);
@@ -225,6 +229,12 @@ class PPXZGeneratorValidation : public edm::one::EDAnalyzer<>
         h_theta_l_sl->Fill(momentum_l_sl.theta());
         h_eta_l_sl->Fill(momentum_l_sl.pseudoRapidity());
 
+        if (momentum_l_le.perp() > 50)
+        {
+          h_p_T_l_le_cut50->Fill(momentum_l_le.perp());
+          h_p_T_l_sl_cut50->Fill(momentum_l_sl.perp());
+        }
+
         h_angle_X_Z->Fill(momentum_X.angle(momentum_Z));
         h_angle_l_pl_l_mi->Fill(momentum_l_pl.angle(momentum_l_mi));
         h_angle_X_pr1_X_pr2->Fill(momentum_X_pr1.angle(momentum_X_pr2));
@@ -293,12 +303,14 @@ class PPXZGeneratorValidation : public edm::one::EDAnalyzer<>
         h_p_tot_l_le->Write("h_p_tot_l_le");
         h_theta_l_le->Write("h_theta_l_le");
         h_eta_l_le->Write("h_eta_l_le");
+        h_p_T_l_le_cut50->Write("h_p_T_l_le_cut50");
 
         h_p_T_l_sl->Write("h_p_T_l_sl");
         h_p_z_l_sl->Write("h_p_z_l_sl");
         h_p_tot_l_sl->Write("h_p_tot_l_sl");
         h_theta_l_sl->Write("h_theta_l_sl");
         h_eta_l_sl->Write("h_eta_l_sl");
+        h_p_T_l_sl_cut50->Write("h_p_T_l_sl_cut50");
 
         h_angle_X_Z->Write("h_angle_X_Z");
         h_angle_l_pl_l_mi->Write("h_angle_l_pl_l_mi");
