@@ -74,6 +74,9 @@ class PPXZGeneratorValidation : public edm::one::EDAnalyzer<>
       TH1D *h_angle_X_Z, *h_angle_l_pl_l_mi, *h_angle_X_pr1_X_pr2, *h_angle_Z_X_pr1, *h_angle_Z_X_pr2;
       TH1D *h_angleT_X_Z, *h_angleT_l_pl_l_mi, *h_angleT_X_pr1_X_pr2, *h_angleT_Z_X_pr1, *h_angleT_Z_X_pr2;
 
+      std::vector<double> thresholds;
+      std::vector<double> th_counts;
+
       void init()
       {
         h_m_Z = new TH1D("", ";m_{Z}   (GeV)", 100, 80., 100.);
@@ -143,6 +146,9 @@ class PPXZGeneratorValidation : public edm::one::EDAnalyzer<>
         h_angleT_X_pr1_X_pr2 = new TH1D("", "angleT(X_pr1, X_pr2)", 100, -1E-3, M_PI + 1E-3);
         h_angleT_Z_X_pr1 = new TH1D("", "angleT(Z, X_pr1)", 100, -1E-3, M_PI + 1E-3);
         h_angleT_Z_X_pr2 = new TH1D("", "angleT(Z, X_pr2)", 100, -1E-3, M_PI + 1E-3);
+
+        thresholds = { 40., 45., 50., 55., 60. };
+        th_counts.resize(5, 0.);
       }
 
       void fill(const CLHEP::HepLorentzVector &momentum_p1, const CLHEP::HepLorentzVector &momentum_p2,
@@ -246,6 +252,12 @@ class PPXZGeneratorValidation : public edm::one::EDAnalyzer<>
         h_angleT_X_pr1_X_pr2->Fill(momentumT_X_pr1.angle(momentumT_X_pr2));
         h_angleT_Z_X_pr1->Fill(momentumT_Z.angle(momentumT_X_pr1));
         h_angleT_Z_X_pr2->Fill(momentumT_Z.angle(momentumT_X_pr2));
+
+        for (unsigned int thi = 0; thi < thresholds.size(); ++thi)
+        {
+          if (momentum_l_le.perp() > thresholds[thi] && momentum_l_sl.perp() > 40.)
+            th_counts[thi] += 1.;
+        }
       }
 
       void write() const
@@ -323,6 +335,11 @@ class PPXZGeneratorValidation : public edm::one::EDAnalyzer<>
         h_angleT_X_pr1_X_pr2->Write("h_angleT_X_pr1_X_pr2");
         h_angleT_Z_X_pr1->Write("h_angleT_Z_X_pr1");
         h_angleT_Z_X_pr2->Write("h_angleT_Z_X_pr2");
+
+        for (unsigned int thi = 0; thi < thresholds.size(); ++thi)
+        {
+          printf("    threshold = %.1f, events = %.1f\n", thresholds[thi], th_counts[thi]);
+        }
       }
     };
 
@@ -430,9 +447,11 @@ void PPXZGeneratorValidation::endJob()
 {
   TFile *f_out = TFile::Open(outputFile.c_str(), "recreate");
   
+  printf("* before simulation\n");
   gDirectory = f_out->mkdir("before simulation");
   plotsBeforeSimulation.write();
   
+  printf("* after simulation\n");
   gDirectory = f_out->mkdir("after simulation");
   plotsAfterSimulation.write();
 
