@@ -140,7 +140,7 @@ void PPXZGenerator::produce(edm::Event &e, const edm::EventSetup& es)
     m_Z = CLHEP::RandBreitWigner::shoot(engine, m_Z_mean, m_Z_gamma);
     m_XZ = m_XZ_min + CLHEP::RandExponential::shoot(engine, c_XZ_mean);
 
-    if (m_XZ > m_Z + m_X)
+    if (m_Z > 0. && m_XZ > m_Z + m_X)
     {
       massesOK = true;
       break;
@@ -172,7 +172,8 @@ void PPXZGenerator::produce(edm::Event &e, const edm::EventSetup& es)
   }
 
   // determine momenta of the X and Z particles in the CMS frame of the X-Z system
-  const double p_c = sqrt( pow(m_XZ*m_XZ - m_X*m_X - m_Z*m_Z, 2.) / (4. * m_XZ * m_XZ) - m_X*m_X * m_Z*m_Z / (m_XZ*m_XZ) );
+  const double p_c_sq = pow(m_XZ*m_XZ - m_X*m_X - m_Z*m_Z, 2.) / (4. * m_XZ * m_XZ) - m_X*m_X * m_Z*m_Z / (m_XZ*m_XZ);
+  const double p_c = sqrt(p_c_sq);
 
   if (verbosity)
     printf("  p_c = %.3f\n", p_c);
