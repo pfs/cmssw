@@ -8,13 +8,17 @@ masses=(
 #	1600
 )
 
+n_events=400000
+#n_events=4000
+
 function RunOneMass()
 {
 	dir="m_X_$mass"
 	mkdir -p "$dir"
 
 	cat "template_cfg.py"|sed "\
-			s|\$mass|$mass|g\
+			s|\$mass|$mass|g;\
+			s|\$n_events|$n_events|g;\
 		" > "$dir/cfg.py"
 
 	cd "$dir"

@@ -16,7 +16,7 @@ process.MessageLogger = cms.Service("MessageLogger",
 process.source = cms.Source("EmptySource")
 
 process.maxEvents = cms.untracked.PSet(
-  input = cms.untracked.int32(400000)
+  input = cms.untracked.int32($n_events)
 )
 
 # particle-data table
@@ -27,7 +27,7 @@ process.load("SimCTPPS.Generators.PPXZGenerator_cfi")
 process.generator.verbosity = 0
 process.generator.m_X = $mass
 process.generator.m_XZ_min = $mass + 100
-process.generator.decayX = False
+process.generator.decayX = True
 
 # random seeds
 process.RandomNumberGeneratorService = cms.Service("RandomNumberGeneratorService",
@@ -114,6 +114,9 @@ process.ctppsTrackDistributionPlotter = cms.EDAnalyzer("CTPPSTrackDistributionPl
 process.load("SimCTPPS.Generators.PPXZGeneratorValidation_cfi")
 process.ppxzGeneratorValidation.hepMCTag = cms.InputTag("generator", "unsmeared")
 process.ppxzGeneratorValidation.recoTracksTag = cms.InputTag("ctppsLocalTrackLiteProducer")
+process.ppxzGeneratorValidation.recoProtonsTag = cms.InputTag("ctppsProtonReconstructionOFDB")
+process.ppxzGeneratorValidation.referenceRPDecId_45 = cms.uint32(23)
+process.ppxzGeneratorValidation.referenceRPDecId_56 = cms.uint32(123)
 process.ppxzGeneratorValidation.outputFile = "ppxzGeneratorValidation.root"
 
 # reconstruction validation
