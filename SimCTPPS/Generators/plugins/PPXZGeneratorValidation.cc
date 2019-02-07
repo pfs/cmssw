@@ -20,11 +20,15 @@
 #include "DataFormats/CTPPSDetId/interface/CTPPSDetId.h"
 #include "DataFormats/CTPPSReco/interface/CTPPSLocalTrackLite.h"
 
+#include "DataFormats/ProtonReco/interface/ProtonTrack.h"
+
 #include "CLHEP/Vector/LorentzVector.h"
 
 #include "TFile.h"
 #include "TH1D.h"
 #include "TH2D.h"
+#include "TProfile.h"
+#include "TGraphErrors.h"
 
 #include "SimCTPPS/Generators/plugins/particle_ids.h"
 
@@ -45,6 +49,9 @@ class PPXZGeneratorValidation : public edm::one::EDAnalyzer<>
 
     edm::EDGetTokenT<edm::HepMCProduct> hepMCToken_;
     edm::EDGetTokenT<std::vector<CTPPSLocalTrackLite>> recoTracksToken_;
+    edm::EDGetTokenT<std::vector<reco::ProtonTrack>> recoProtonsToken_;
+
+    unsigned int referenceRPDecId_45, referenceRPDecId_56;
 
     std::string outputFile;
 
@@ -73,6 +80,16 @@ class PPXZGeneratorValidation : public edm::one::EDAnalyzer<>
 
       TH1D *h_angle_X_Z, *h_angle_l_pl_l_mi, *h_angle_X_pr1_X_pr2, *h_angle_Z_X_pr1, *h_angle_Z_X_pr2;
       TH1D *h_angleT_X_Z, *h_angleT_l_pl_l_mi, *h_angleT_X_pr1_X_pr2, *h_angleT_Z_X_pr1, *h_angleT_Z_X_pr2;
+
+      TH1D *h_de_xi_single_45, *h_de_xi_single_56;
+      TProfile *p_de_xi_vs_xi_single_45, *p_de_xi_vs_xi_single_56;
+      TH1D *h_de_xi_multi_45, *h_de_xi_multi_56;
+      TProfile *p_de_xi_vs_xi_multi_45, *p_de_xi_vs_xi_multi_56;
+
+      TH1D *h_de_m_X_single, *h_de_m_XZ_single;
+      TProfile *p_de_m_vs_m_X_single, *p_de_m_vs_m_XZ_single;
+      TH1D *h_de_m_X_multi, *h_de_m_XZ_multi;
+      TProfile *p_de_m_vs_m_X_multi, *p_de_m_vs_m_XZ_multi;
 
       std::vector<double> thresholds;
       std::vector<double> th_counts;
@@ -147,7 +164,27 @@ class PPXZGeneratorValidation : public edm::one::EDAnalyzer<>
         h_angleT_Z_X_pr1 = new TH1D("", "angleT(Z, X_pr1)", 100, -1E-3, M_PI + 1E-3);
         h_angleT_Z_X_pr2 = new TH1D("", "angleT(Z, X_pr2)", 100, -1E-3, M_PI + 1E-3);
 
-        thresholds = { 40., 45., 50., 55., 60. };
+        h_de_xi_single_45 = new TH1D("", ";#xi_{45,reco} - #xi_{45,simu}", 200, -0.05, 0.05);
+        p_de_xi_vs_xi_single_45 = new TProfile("", ";#xi_{45,simu};#xi_{45,reco} - #xi_{45,simu}", 19, 0.015, 0.205);
+        h_de_xi_multi_45 = new TH1D("", ";#xi_{45,reco} - #xi_{45,simu}", 200, -0.05, 0.05);
+        p_de_xi_vs_xi_multi_45 = new TProfile("", ";#xi_{45,simu};#xi_{45,reco} - #xi_{45,simu}", 19, 0.015, 0.205);
+
+        h_de_xi_single_56 = new TH1D("", ";#xi_{56,reco} - #xi_{56,simu}", 200, -0.05, 0.05);
+        p_de_xi_vs_xi_single_56 = new TProfile("", ";#xi_{56,simu};#xi_{56,reco} - #xi_{56,simu}", 19, 0.015, 0.205);
+        h_de_xi_multi_56 = new TH1D("", ";#xi_{56,reco} - #xi_{56,simu}", 200, -0.05, 0.05);
+        p_de_xi_vs_xi_multi_56 = new TProfile("", ";#xi_{56,simu};#xi_{56,reco} - #xi_{56,simu}", 19, 0.015, 0.205);
+
+        h_de_m_X_single = new TH1D("", ";m_{X,reco} - m_{X,simu}", 200, -500., +500.);
+        p_de_m_vs_m_X_single = new TProfile("", ";m_{X,simu};m_{X,reco} - m_{X,simu}", 200, 0., 2000.);
+        h_de_m_X_multi = new TH1D("", ";m_{X,reco} - m_{X,simu}", 200, -500., +500.);
+        p_de_m_vs_m_X_multi = new TProfile("", ";m_{X,simu};m_{X,reco} - m_{X,simu}", 200, 0., 2000.);
+
+        h_de_m_XZ_single = new TH1D("", ";m_{XZ,reco} - m_{XZ,simu}", 200, -500., +500.);
+        p_de_m_vs_m_XZ_single = new TProfile("", ";m_{XZ,simu};m_{XZ,reco} - m_{XZ,simu}", 200, 0., 2000.);
+        h_de_m_XZ_multi = new TH1D("", ";m_{XZ,reco} - m_{XZ,simu}", 200, -500., +500.);
+        p_de_m_vs_m_XZ_multi = new TProfile("", ";m_{XZ,simu};m_{XZ,reco} - m_{XZ,simu}", 200, 0., 2000.);
+
+        thresholds = { 30., 35., 40., 45., 50., 55. };
         th_counts.resize(5, 0.);
       }
 
@@ -155,7 +192,9 @@ class PPXZGeneratorValidation : public edm::one::EDAnalyzer<>
         const CLHEP::HepLorentzVector &momentum_X,
         const CLHEP::HepLorentzVector &momentum_X_pr1, const CLHEP::HepLorentzVector &momentum_X_pr2,
         const CLHEP::HepLorentzVector &momentum_Z,
-        const CLHEP::HepLorentzVector &momentum_l_pl, const CLHEP::HepLorentzVector &momentum_l_mi)
+        const CLHEP::HepLorentzVector &momentum_l_pl, const CLHEP::HepLorentzVector &momentum_l_mi,
+        const reco::ProtonTrack &rec_pr_single_45, const reco::ProtonTrack &rec_pr_single_56,
+        const reco::ProtonTrack &rec_pr_multi_45, const reco::ProtonTrack &rec_pr_multi_56)
       {
         if (h_m_Z == NULL)
           init();
@@ -185,6 +224,35 @@ class PPXZGeneratorValidation : public edm::one::EDAnalyzer<>
         const double p_beam = (momentum_p1 + momentum_p2 + momentum_Z + momentum_X).m() / 2.;
         const double xi1 = 1. - momentum_p1.t() / p_beam;
         const double xi2 = 1. - momentum_p2.t() / p_beam;
+
+        const CLHEP::HepLorentzVector momentum_p_simu_45 = (momentum_p1.z() > 0) ? momentum_p1 : momentum_p2;
+        const CLHEP::HepLorentzVector momentum_p_simu_56 = (momentum_p1.z() < 0) ? momentum_p1 : momentum_p2;
+
+        const CLHEP::HepLorentzVector momentum_p_reco_single_45(0., 0., +p_beam*(1.-rec_pr_single_45.xi()), p_beam*(1.-rec_pr_single_45.xi()));
+        const CLHEP::HepLorentzVector momentum_p_reco_single_56(0., 0., -p_beam*(1.-rec_pr_single_56.xi()), p_beam*(1.-rec_pr_single_56.xi()));
+
+        const CLHEP::HepLorentzVector momentum_p_reco_multi_45(0., 0., +p_beam*(1.-rec_pr_multi_45.xi()), p_beam*(1.-rec_pr_multi_45.xi()));
+        const CLHEP::HepLorentzVector momentum_p_reco_multi_56(0., 0., -p_beam*(1.-rec_pr_multi_56.xi()), p_beam*(1.-rec_pr_multi_56.xi()));
+
+        const double xi_simu_45 = 1. - momentum_p_simu_45.t() / p_beam;
+        const double xi_simu_56 = 1. - momentum_p_simu_56.t() / p_beam;
+
+        const double xi_reco_single_45 = 1. - momentum_p_reco_single_45.t() / p_beam;
+        const double xi_reco_single_56 = 1. - momentum_p_reco_single_56.t() / p_beam;
+
+        const double xi_reco_multi_45 = 1. - momentum_p_reco_multi_45.t() / p_beam;
+        const double xi_reco_multi_56 = 1. - momentum_p_reco_multi_56.t() / p_beam;
+
+        const CLHEP::HepLorentzVector momentum_init(0., 0., 0., 2. * p_beam);
+
+        const double m_X_simu = momentum_X.m();
+        const double m_X_reco_single = (momentum_init - momentum_p_reco_single_45 - momentum_p_reco_single_56 - momentum_Z).m();
+        const double m_X_reco_multi = (momentum_init - momentum_p_reco_multi_45 - momentum_p_reco_multi_56 - momentum_Z).m();
+
+        const double m_XZ_simu = (momentum_Z + momentum_X).m();
+        const double m_XZ_reco_single = (momentum_init - momentum_p_reco_single_45 - momentum_p_reco_single_56).m();
+        const double m_XZ_reco_multi = (momentum_init - momentum_p_reco_multi_45 - momentum_p_reco_multi_56).m();
+
         h_xi2_vs_xi1->Fill(xi1, xi2);
 
         h_p_T_X->Fill(momentum_X.perp());
@@ -253,9 +321,39 @@ class PPXZGeneratorValidation : public edm::one::EDAnalyzer<>
         h_angleT_Z_X_pr1->Fill(momentumT_Z.angle(momentumT_X_pr1));
         h_angleT_Z_X_pr2->Fill(momentumT_Z.angle(momentumT_X_pr2));
 
+        if (rec_pr_single_45.valid() && rec_pr_single_56.valid())
+        {
+          h_de_xi_single_45->Fill(xi_reco_single_45 - xi_simu_45);
+          p_de_xi_vs_xi_single_45->Fill(xi_simu_45, xi_reco_single_45 - xi_simu_45);
+
+          h_de_xi_single_56->Fill(xi_reco_single_56 - xi_simu_56);
+          p_de_xi_vs_xi_single_56->Fill(xi_simu_56, xi_reco_single_56 - xi_simu_56);
+
+          h_de_m_X_single->Fill(m_X_reco_single - m_X_simu);
+          p_de_m_vs_m_X_single->Fill(m_X_simu, m_X_reco_single - m_X_simu);
+
+          h_de_m_XZ_single->Fill(m_XZ_reco_single - m_XZ_simu);
+          p_de_m_vs_m_XZ_single->Fill(m_XZ_simu, m_XZ_reco_single - m_XZ_simu);
+        }
+
+        if (rec_pr_multi_45.valid() && rec_pr_multi_56.valid())
+        {
+          h_de_xi_multi_45->Fill(xi_reco_multi_45 - xi_simu_45);
+          p_de_xi_vs_xi_multi_45->Fill(xi_simu_45, xi_reco_multi_45 - xi_simu_45);
+
+          h_de_xi_multi_56->Fill(xi_reco_multi_56 - xi_simu_56);
+          p_de_xi_vs_xi_multi_56->Fill(xi_simu_56, xi_reco_multi_56 - xi_simu_56);
+
+          h_de_m_X_multi->Fill(m_X_reco_multi - m_X_simu);
+          p_de_m_vs_m_X_multi->Fill(m_X_simu, m_X_reco_multi - m_X_simu);
+
+          h_de_m_XZ_multi->Fill(m_XZ_reco_multi - m_XZ_simu);
+          p_de_m_vs_m_XZ_multi->Fill(m_XZ_simu, m_XZ_reco_multi - m_XZ_simu);
+        }
+
         for (unsigned int thi = 0; thi < thresholds.size(); ++thi)
         {
-          if (momentum_l_le.perp() > thresholds[thi] && momentum_l_sl.perp() > 40.)
+          if (momentum_l_le.perp() > 55. && momentum_l_sl.perp() > thresholds[thi])
             th_counts[thi] += 1.;
         }
       }
@@ -336,10 +434,65 @@ class PPXZGeneratorValidation : public edm::one::EDAnalyzer<>
         h_angleT_Z_X_pr1->Write("h_angleT_Z_X_pr1");
         h_angleT_Z_X_pr2->Write("h_angleT_Z_X_pr2");
 
+        h_de_xi_single_45->Write("h_de_xi_single_45");
+        p_de_xi_vs_xi_single_45->Write("p_de_xi_vs_xi_single_45");
+        ProfileToRMSGraph(p_de_xi_vs_xi_single_45, "g_rms_de_xi_vs_xi_single_45")->Write();
+        h_de_xi_multi_45->Write("h_de_xi_multi_45");
+        p_de_xi_vs_xi_multi_45->Write("p_de_xi_vs_xi_multi_45");
+        ProfileToRMSGraph(p_de_xi_vs_xi_multi_45, "g_rms_de_xi_vs_xi_multi_45")->Write();
+
+        h_de_xi_single_56->Write("h_de_xi_single_56");
+        p_de_xi_vs_xi_single_56->Write("p_de_xi_vs_xi_single_56");
+        ProfileToRMSGraph(p_de_xi_vs_xi_single_56, "g_rms_de_xi_vs_xi_single_56")->Write();
+        h_de_xi_multi_56->Write("h_de_xi_multi_56");
+        p_de_xi_vs_xi_multi_56->Write("p_de_xi_vs_xi_multi_56");
+        ProfileToRMSGraph(p_de_xi_vs_xi_multi_56, "g_rms_de_xi_vs_xi_multi_56")->Write();
+
+        h_de_m_X_single->Write("h_de_m_X_single");
+        p_de_m_vs_m_X_single->Write("p_de_m_vs_m_X_single");
+        ProfileToRMSGraph(p_de_m_vs_m_X_single, "g_rms_de_m_vs_m_X_single")->Write();
+        h_de_m_X_multi->Write("h_de_m_X_multi");
+        p_de_m_vs_m_X_multi->Write("p_de_m_vs_m_X_multi");
+        ProfileToRMSGraph(p_de_m_vs_m_X_multi, "g_rms_de_m_vs_m_X_multi")->Write();
+
+        h_de_m_XZ_single->Write("h_de_m_XZ_single");
+        p_de_m_vs_m_XZ_single->Write("p_de_m_vs_m_XZ_single");
+        ProfileToRMSGraph(p_de_m_vs_m_XZ_single, "g_rms_de_m_vs_m_XZ_single")->Write();
+        h_de_m_XZ_multi->Write("h_de_m_XZ_multi");
+        p_de_m_vs_m_XZ_multi->Write("p_de_m_vs_m_XZ_multi");
+        ProfileToRMSGraph(p_de_m_vs_m_XZ_multi, "g_rms_de_m_vs_m_XZ_multi")->Write();
+
         for (unsigned int thi = 0; thi < thresholds.size(); ++thi)
         {
           printf("    threshold = %.1f, events = %.1f\n", thresholds[thi], th_counts[thi]);
         }
+      }
+
+      static TGraphErrors* ProfileToRMSGraph(TProfile *p, const std::string &name = "")
+      {
+          TGraphErrors *g = new TGraphErrors();
+          g->SetName(name.c_str());
+
+          for (int bi = 1; bi <= p->GetNbinsX(); ++bi)
+          {
+              double c = p->GetBinCenter(bi);
+              double w = p->GetBinWidth(bi);
+
+              double N = p->GetBinEntries(bi);
+              double Sy = p->GetBinContent(bi) * N;
+              double Syy = p->GetSumw2()->At(bi);
+
+              double si_sq = Syy/N - Sy*Sy/N/N;
+              double si = (si_sq >= 0.) ? sqrt(si_sq) : 0.;
+              double si_unc_sq = si_sq / 2. / N;  // Gaussian approximation
+              double si_unc = (si_unc_sq >= 0.) ? sqrt(si_unc_sq) : 0.;
+
+              int idx = g->GetN();
+              g->SetPoint(idx, c, si);
+              g->SetPointError(idx, w/2., si_unc);
+          }
+
+          return g;
       }
     };
 
@@ -356,6 +509,9 @@ class PPXZGeneratorValidation : public edm::one::EDAnalyzer<>
 PPXZGeneratorValidation::PPXZGeneratorValidation( const edm::ParameterSet& iConfig ) :
   hepMCToken_( consumes< edm::HepMCProduct >( iConfig.getParameter<edm::InputTag>( "hepMCTag" ) ) ),
   recoTracksToken_( consumes< std::vector<CTPPSLocalTrackLite> >( iConfig.getParameter<edm::InputTag>( "recoTracksTag" ) ) ),
+  recoProtonsToken_( consumes<std::vector<reco::ProtonTrack>>(iConfig.getParameter<edm::InputTag>("recoProtonsTag")) ),
+  referenceRPDecId_45(iConfig.getParameter<unsigned int>("referenceRPDecId_45")),
+  referenceRPDecId_56(iConfig.getParameter<unsigned int>("referenceRPDecId_56")),
   outputFile( iConfig.getParameter<std::string>("outputFile") )
 {
 }
@@ -376,6 +532,9 @@ void PPXZGeneratorValidation::analyze(const edm::Event& iEvent, const edm::Event
 
   edm::Handle< std::vector<CTPPSLocalTrackLite> > hRecoTracks;
   iEvent.getByToken(recoTracksToken_, hRecoTracks);
+
+  edm::Handle< std::vector<reco::ProtonTrack> > hRecoProtons;
+  iEvent.getByToken(recoProtonsToken_, hRecoProtons);
 
   // process HepMC record
   CLHEP::HepLorentzVector momentum_p1, momentum_p2, momentum_X, momentum_X_pr1, momentum_X_pr2, momentum_Z, momentum_l_pl, momentum_l_mi;
@@ -420,19 +579,55 @@ void PPXZGeneratorValidation::analyze(const edm::Event& iEvent, const edm::Event
   }
 
   // process tracks
-  bool protonIn45 = false, protonIn56 = false;
+  bool protonTrackIn45 = false, protonTrackIn56 = false;
   for (const auto& tr : *hRecoTracks)
   {
     CTPPSDetId rpId(tr.getRPId());
-    if (rpId.arm() == 0) protonIn45 = true;
-    if (rpId.arm() == 1) protonIn56 = true;
+    if (rpId.arm() == 0) protonTrackIn45 = true;
+    if (rpId.arm() == 1) protonTrackIn56 = true;
+  }
+
+  // process reco protons
+  reco::ProtonTrack rec_pr_single_45; rec_pr_single_45.setValid(false);
+  reco::ProtonTrack rec_pr_single_56; rec_pr_single_56.setValid(false);
+
+  reco::ProtonTrack rec_pr_multi_45; rec_pr_multi_45.setValid(false);
+  reco::ProtonTrack rec_pr_multi_56; rec_pr_multi_56.setValid(false);
+
+  for (const auto &rec_pr : *hRecoProtons)
+  {
+    if (! rec_pr.valid())
+      continue;
+
+    if (rec_pr.method == reco::ProtonTrack::rmSingleRP)
+    {
+      CTPPSDetId rpId(* rec_pr.contributingRPIds.begin());
+      unsigned int rpDecId = 100*rpId.arm() + 10*rpId.station() + rpId.rp();
+
+      if (rpDecId == referenceRPDecId_45)
+        rec_pr_single_45 = rec_pr;
+
+      if (rpDecId == referenceRPDecId_56)
+        rec_pr_single_56 = rec_pr;
+    }
+
+    if (rec_pr.method == reco::ProtonTrack::rmMultiRP)
+    {
+      if (rec_pr.lhcSector == reco::ProtonTrack::sector45)
+        rec_pr_multi_45 = rec_pr;
+
+      if (rec_pr.lhcSector == reco::ProtonTrack::sector56)
+        rec_pr_multi_56 = rec_pr;
+    }
   }
 
   // fill plots
-  plotsBeforeSimulation.fill(momentum_p1, momentum_p2, momentum_X, momentum_X_pr1, momentum_X_pr2, momentum_Z, momentum_l_pl, momentum_l_mi);
+  plotsBeforeSimulation.fill(momentum_p1, momentum_p2, momentum_X, momentum_X_pr1, momentum_X_pr2, momentum_Z, momentum_l_pl, momentum_l_mi,
+    rec_pr_single_45, rec_pr_single_56, rec_pr_multi_45, rec_pr_multi_56);
 
-  if (protonIn45 && protonIn56)
-    plotsAfterSimulation.fill(momentum_p1, momentum_p2, momentum_X, momentum_X_pr1, momentum_X_pr2, momentum_Z, momentum_l_pl, momentum_l_mi);
+  if (protonTrackIn45 && protonTrackIn56)
+    plotsAfterSimulation.fill(momentum_p1, momentum_p2, momentum_X, momentum_X_pr1, momentum_X_pr2, momentum_Z, momentum_l_pl, momentum_l_mi,
+      rec_pr_single_45, rec_pr_single_56, rec_pr_multi_45, rec_pr_multi_56);
 }
 
 //----------------------------------------------------------------------------------------------------
