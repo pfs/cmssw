@@ -1,7 +1,7 @@
 import root;
 import pad_layout;
 
-string topDir = "../../";
+string topDir = "../../test/m_X_1200/";
 
 string files[] = {
 	"output_shape_smear.root",
@@ -42,4 +42,4 @@ for (int fi : files.keys)
 	}
 }
 
-GShipout(hSkip=1mm, vSkip=1mm);
+GShipout("hit_distribution", hSkip=1mm, vSkip=1mm);

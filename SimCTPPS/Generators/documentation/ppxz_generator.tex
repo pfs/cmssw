@@ -1,18 +1,18 @@
 \input slides.tex
-\input utf8-t1
+%\input utf8-t1
 
 \newpage %-------------------------------------------------------------------------------------------
 
 \def\author{PPS}
 \def\caption{PPXZ generator}
-\def\date{24 Oct 2018}
+\def\date{7 Feb 2019}
 
 \newpage %-------------------------------------------------------------------------------------------
 \hbox{}
 \vfil
 \title{Toy simulation of $\rm p + p \rightarrow p + Z + X + p$ processes}
 \vskip3mm
-\centerline{N.~Turini, F.~Turini, L.~Marini, J.~Ka\v spar}
+\centerline{N.~Turini, F.~Turini, L.~Marini, J.~Kaspar}
 \vfil
 
 
@@ -29,7 +29,9 @@
 \>> simulation of aperture limitations ($\xi$-$\th^*_x$ cut off deduced from LHC data)
 \>> simulation of RecHits: with sensor acceptance and resolution
 
-\> standard reconstruction RecHits $\rightarrow$ (lite) tracks
+\> reconstruction
+\>> RecHits $\rightarrow$ local tracks
+\>> reconstructed protons (for resolution studies)
 
 \> distribution plotter
 \>> plots generator level quantities (X, Z, ...) with and without condition on protons reconstructed in RPs
@@ -73,6 +75,8 @@ $$m_Z = RandBreitWigner(\hbox{mean, gamma})$$
 \newpage %-------------------------------------------------------------------------------------------
 \ctitle{MC generator}{Default parameters}
 
+\SmallerFonts
+
 \> mass of particle X: m\_X = $1200\un{GeV}$
 \> masses of X decay products: m\_X\_pr1 = $1100\un{GeV}$, m\_X\_pr2 = $0\un{GeV}$
 
@@ -81,11 +85,17 @@ $$m_Z = RandBreitWigner(\hbox{mean, gamma})$$
 \> mass of electron: m\_mu = $105.658e-3\un{GeV}$
 \> momentum of beam protons: p\_beam = $6500\un{GeV}$
 \> generation of $m_{\rm XZ}$
-\>> minimal value m\_XZ\_min = $1300\un{GeV}$
+\>> minimal value m\_XZ\_min = m\_X + $100\un{GeV}$
 \>> parameter of exponential distribution: c = $0.04$
 \> generation of $p_z(\hbox{2 protons})$
 \>> mean: p\_z\_LAB\_2p\_min = $-1000\un{GeV}$
 \>> sigma: p\_z\_LAB\_2p\_max = $+1500\un{GeV}$
+
+\> 2017 settings
+\>> RP layout: strips (near RP) + pixels (far RP)
+\>>> used effective pitch to reproduce \em{realistic RP resolution} ($12\un{\mu m}$ and $\approx 23\un{\mu m}$, resp.)
+\>> xangle $140\un{\mu rad}$: optics, aperture limits
+\>> beam divergence: $20\un{\mu rad}$ (\em{to be verified})
 
 
 \newpage %-------------------------------------------------------------------------------------------
@@ -121,6 +131,7 @@ $$m_Z = RandBreitWigner(\hbox{mean, gamma})$$
 \> plots on next slides
 \>> obtained with the default parameters
 \>> Z decayed to an electron pair
+\>> plotted generator level quantities (unless specified differently)
 \>> colour code in 1D histograms:
 \>>> blue: without requiring protons in RP acceptance
 \>>> red: protons required in RP acceptance
@@ -186,6 +197,27 @@ $$m_Z = RandBreitWigner(\hbox{mean, gamma})$$
 \ctitle{Distributions}{Angles between particles in transverse plane}
 
 \centerline{\fig[16cm]{fig/anglesT.pdf}}
+
+
+\newpage %-------------------------------------------------------------------------------------------
+\ctitle{Resolution}{Histograms}
+
+\> resolution: only due to statistical fluctuations in proton reconstruction
+\>> perfect reconstruction of Z assumed
+\>> no systematics considered
+
+\centerline{\fig[16cm]{fig/resolution_histograms.pdf}}
+
+\>> single-RP: limited by neglected terms in proton propagation (beam div.)
+\>> multi-RP: limited by sensor resolution
+
+\newpage %-------------------------------------------------------------------------------------------
+\ctitle{Resolution}{Profiles}
+
+\> as previous slide, but resolution plotted as a function of kinematics
+
+\centerline{\fig[16cm]{fig/resolution_profiles.pdf}}
+
 
 \vfil
 \eject

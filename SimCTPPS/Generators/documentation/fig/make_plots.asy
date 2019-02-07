@@ -1,7 +1,8 @@
 import root;
 import pad_layout;
 
-string f = "../../ppxzGeneratorValidation.root";
+string topDir = "../../test/m_X_1200/";
+string f = topDir + "ppxzGeneratorValidation.root";
 
 string particles[];
 particles.push("X"); 
@@ -35,8 +36,8 @@ particles.push("X"); p_labels.push("X");
 particles.push("X_pr1"); p_labels.push("X, product 1");
 particles.push("X_pr2"); p_labels.push("X, product 2");
 particles.push("Z"); p_labels.push("Z");
-particles.push("l_mi"); p_labels.push("$\rm l^-$");
-particles.push("l_pl"); p_labels.push("$\rm l^+$");
+particles.push("l_mi"); p_labels.push("$\ell^-$");
+particles.push("l_pl"); p_labels.push("$\ell^+$");
 
 for (int qi : quantities.keys)
 {
@@ -81,7 +82,7 @@ MakeOnePlot("h_angle_X_Z", "angle(X, Z)");
 
 MakeOnePlot("h_angle_X_pr1_X_pr2", "angle(X product 1, X product 2)");
 
-MakeOnePlot("h_angle_l_pl_l_mi", "angle($l^+$, $l^-$)");
+MakeOnePlot("h_angle_l_pl_l_mi", "angle($\ell^+$, $\ell^-$)");
 
 NewRow();
 
@@ -97,7 +98,7 @@ MakeOnePlot("h_angleT_X_Z", "transverse angle(X, Z)");
 
 MakeOnePlot("h_angleT_X_pr1_X_pr2", "transverse angle(X product 1, X product 2)");
 
-MakeOnePlot("h_angleT_l_pl_l_mi", "transverse angle($l^+$, $l^-$)");
+MakeOnePlot("h_angleT_l_pl_l_mi", "transverse angle($\ell^+$, $\ell^-$)");
 
 NewRow();
 
