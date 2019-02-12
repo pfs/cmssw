@@ -73,9 +73,23 @@ process.ctppsFastProtonSimulation.checkApertures = False
 process.ctppsFastProtonSimulation.produceHitsRelativeToBeam = False
 process.ctppsFastProtonSimulation.roundToPitch = True
 
-process.ctppsFastProtonSimulation.xangle = 140 # make sure it corresponds to process.ctppsLHCInfoESSource.xangle
-process.ctppsFastProtonSimulation.empiricalAperture45_xi0 = 0.153
-process.ctppsFastProtonSimulation.empiricalAperture56_xi0 = 0.19
+process.ctppsFastProtonSimulation.xangle = $xangle
+
+if (process.ctppsFastProtonSimulation.xangle == 150):
+  process.ctppsFastProtonSimulation.empiricalAperture45_xi0 = 0.158
+  process.ctppsFastProtonSimulation.empiricalAperture56_xi0 = 0.20
+
+if (process.ctppsFastProtonSimulation.xangle == 140):
+  process.ctppsFastProtonSimulation.empiricalAperture45_xi0 = 0.153
+  process.ctppsFastProtonSimulation.empiricalAperture56_xi0 = 0.19
+
+if (process.ctppsFastProtonSimulation.xangle == 130):
+  process.ctppsFastProtonSimulation.empiricalAperture45_xi0 = 0.148
+  process.ctppsFastProtonSimulation.empiricalAperture56_xi0 = 0.18
+
+if (process.ctppsFastProtonSimulation.xangle == 120):
+  process.ctppsFastProtonSimulation.empiricalAperture45_xi0 = 0.143
+  process.ctppsFastProtonSimulation.empiricalAperture56_xi0 = 0.17
 
 # effective value to reproduce real RP resolution
 process.ctppsFastProtonSimulation.pitchStrips = 66E-3 * 12 / 19
@@ -101,7 +115,7 @@ process.ctppsProtonReconstructionOFDB.applyExperimentalAlignment = False
 
 process.ctppsLHCInfoESSource = cms.ESSource("CTPPSLHCInfoESSource",
   beamEnergy = cms.double(6500),
-  xangle = cms.double(140)
+  xangle = cms.double($xangle)
 )
 
 # XY distribution plotter

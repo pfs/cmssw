@@ -1,23 +1,36 @@
 #!/bin/bash
 
 masses=(
-#	800
+	800
 	1000
 	1200
 	1400
-#	1600
+	1600
 )
 
-n_events=400000
+xangles=(
+	120
+	130
+	140
+	150
+)
+
+#n_events=400000
+n_events=100000
 #n_events=4000
 
-function RunOneMass()
+#----------------------------------------------------------------------------------------------------
+
+function RunOne()
 {
-	dir="m_X_$mass"
+	dir="m_X_$mass/xangle_$xangle"
+	echo $dir
+
 	mkdir -p "$dir"
 
 	cat "template_cfg.py"|sed "\
 			s|\$mass|$mass|g;\
+			s|\$xangle|$xangle|g;\
 			s|\$n_events|$n_events|g;\
 		" > "$dir/cfg.py"
 
@@ -28,7 +41,12 @@ function RunOneMass()
 	cd - &> /dev/null
 }
 
+#----------------------------------------------------------------------------------------------------
+
 for mass in ${masses[*]}
 do
-	RunOneMass $mass
+	for xangle in ${xangles[*]}
+	do
+		RunOne
+	done
 done

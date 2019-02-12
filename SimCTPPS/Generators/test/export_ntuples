@@ -1,0 +1,33 @@
+#!/bin/bash
+
+export_dir="/afs/cern.ch/user/j/jkaspar/public/ctpps/ppxz"
+
+masses=(
+	800
+	1000
+	1200
+	1400
+	1600
+)
+
+xangles=(
+	120
+	130
+	140
+	150
+)
+
+#----------------------------------------------------------------------------------------------------
+
+for mass in ${masses[*]}
+do
+	for xangle in ${xangles[*]}
+	do
+		dir="m_X_$mass/xangle_$xangle"
+		echo "* $dir"
+
+		mkdir -p "$export_dir/$dir"
+
+		cp "$dir/ntuple.root" "$export_dir/$dir"
+	done	
+done
