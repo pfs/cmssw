@@ -90,7 +90,9 @@ void HGCDigitizerBase<DFr>::runSimple(std::unique_ptr<HGCDigitizerBase::DColl>& 
 
     //set the noise,cce, LSB and threshold to be used
     float cce(1.f), noiseWidth(0.f), lsbADC(-1.f), maxADC(-1.f);
+    // half the target mip value is the specification for ZS threshold
     uint32_t thrADC(std::floor(myFEelectronics_->getTargetMipValue() / 2));
+    uint32_t gainIdx = 0;
     if (scaleByDose_) {
       HGCSiliconDetId detId(id);
       HGCalSiNoiseMap::SiCellOpCharacteristics siop =
@@ -99,11 +101,14 @@ void HGCDigitizerBase<DFr>::runSimple(std::unique_ptr<HGCDigitizerBase::DColl>& 
       noiseWidth = siop.noise;
       lsbADC = scal_.getLSBPerGain()[(HGCalSiNoiseMap::GainRange_t)siop.gain];
       maxADC = scal_.getMaxADCPerGain()[(HGCalSiNoiseMap::GainRange_t)siop.gain];
+      gainIdx = siop.gain;
+
       if (thresholdFollowsMIP_)
         thrADC = siop.thrADC;
     } else if (noise_fC_[cell.thickness - 1] != 0) {
       //this is kept for legacy compatibility with the TDR simulation
       //probably should simply be removed in a future iteration
+      //note that in this legacy case, gainIdx is kept at 0, fixed
       cce = (cce_.empty() ? 1.f : cce_[cell.thickness - 1]);
       noiseWidth = cell.size * noise_fC_[cell.thickness - 1];
       thrADC =
@@ -131,7 +136,8 @@ void HGCDigitizerBase<DFr>::runSimple(std::unique_ptr<HGCDigitizerBase::DColl>& 
 
     //run the shaper to create a new data frame
     DFr rawDataFrame(id);
-    myFEelectronics_->runShaper(rawDataFrame, chargeColl, toa, engine, thrADC, lsbADC, maxADC, cell.thickness);
+    int thickness = cell.thickness > 0 ? cell.thickness : 1;
+    myFEelectronics_->runShaper(rawDataFrame, chargeColl, toa, engine, thrADC, lsbADC, gainIdx, maxADC, thickness);
 
     //update the output according to the final shape
     updateOutput(coll, rawDataFrame);

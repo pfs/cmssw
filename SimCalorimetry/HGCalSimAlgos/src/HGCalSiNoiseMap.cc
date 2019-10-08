@@ -2,11 +2,11 @@
 
 //
 HGCalSiNoiseMap::HGCalSiNoiseMap() : encpScale_(840.), encCommonNoiseSub_(sqrt(1.25)), qe2fc_(1.60217646E-4) {
-  encsParam_.push_back({636., 15.6, 0.0328});  //q80fC
-  maxADCPerGain_.push_back(80.);
-  encsParam_.push_back({1045., 8.74, 0.0685});  //q160fC
+  encsParam_.push_back({636., 15.6, 0.0328});   // q80fC
+  maxADCPerGain_.push_back(80.);                // the num of fC (charge) which corresponds to the max ADC value
+  encsParam_.push_back({1045., 8.74, 0.0685});  // q160fC
   maxADCPerGain_.push_back(160.);
-  encsParam_.push_back({1915., 2.79, 0.0878});  //q320fC
+  encsParam_.push_back({1915., 2.79, 0.0878});  // q320fC
   maxADCPerGain_.push_back(320.);
 
   for (auto i : maxADCPerGain_)
@@ -94,6 +94,7 @@ HGCalSiNoiseMap::SiCellOpCharacteristics HGCalSiNoiseMap::getSiCellOpCharacteris
       gain = HGCalSiNoiseMap::q160fC;
     if (gainIdx == 2)
       gain = HGCalSiNoiseMap::q320fC;
+    // move computation to ROC level (one day)
   }
 
   //fill in the parameters of the struct
@@ -105,7 +106,7 @@ HGCalSiNoiseMap::SiCellOpCharacteristics HGCalSiNoiseMap::getSiCellOpCharacteris
   //build noise estimate
   double enc_s(encsParam_[gain][0] + encsParam_[gain][1] * cellCap + encsParam_[gain][2] * pow(cellCap, 2));
   double enc_p(encpScale_ * sqrt(siop.ileak));
-  siop.noise = hypot(enc_p, enc_s) * encCommonNoiseSub_ * qe2fc_;
+  siop.noise = hypot(enc_p, enc_s* encCommonNoiseSub_ )  * qe2fc_;
 
   return siop;
 }
