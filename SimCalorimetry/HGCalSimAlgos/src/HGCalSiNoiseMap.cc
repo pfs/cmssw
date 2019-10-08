@@ -106,7 +106,7 @@ HGCalSiNoiseMap::SiCellOpCharacteristics HGCalSiNoiseMap::getSiCellOpCharacteris
   //build noise estimate
   double enc_s(encsParam_[gain][0] + encsParam_[gain][1] * cellCap + encsParam_[gain][2] * pow(cellCap, 2));
   double enc_p(encpScale_ * sqrt(siop.ileak));
-  siop.noise = hypot(enc_p, enc_s) * encCommonNoiseSub_ * qe2fc_;
+  siop.noise = hypot(enc_p, enc_s* encCommonNoiseSub_ )  * qe2fc_;
 
   return siop;
 }
