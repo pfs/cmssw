@@ -8,3 +8,8 @@
 </library>
 <library file="HGCHEbackSignalScalerAnalyzer.cc" name="HGCHEbackSignalScalerAnalyzer">
 </library>
+<bin file="test/HGCROCAlgoTest.cpp" name="HGCROCAlgoTest">
+  <use name="FWCore/ParameterSetReader"/>
+  <use name="DataFormats/HGCDigi"/>
+  <use name="SimCalorimetry/HGCalSimProducers"/>
+</bin>
