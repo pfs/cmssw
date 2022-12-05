@@ -1,0 +1,6 @@
+<lcgdict>
+  <class name="HGCalECONDEmulatorInfo"/>
+  <class name="edm::Wrapper<HGCalECONDEmulatorInfo>"/>
+  <class name="std::bitset<37>"/>
+  <class name="std::vector<std::bitset<37>>"/>
+</lcgdict>
