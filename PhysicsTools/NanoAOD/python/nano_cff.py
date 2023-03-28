@@ -163,15 +163,15 @@ def nanoAOD_customizeCommon(process):
 
     # This function is defined in jetsAK8_cff.py
     process = nanoAOD_addDeepInfoAK8(process,
-        addDeepBTag=nanoAOD_addDeepInfoAK8_switch.nanoAOD_addDeepBTag_switch,
-        addDeepBoostedJet=nanoAOD_addDeepInfoAK8_switch.nanoAOD_addDeepBoostedJet_switch,
-        addDeepDoubleX=nanoAOD_addDeepInfoAK8_switch.nanoAOD_addDeepDoubleX_switch,
-        addDeepDoubleXV2=nanoAOD_addDeepInfoAK8_switch.nanoAOD_addDeepDoubleXV2_switch,
-        addParticleNet=nanoAOD_addDeepInfoAK8_switch.nanoAOD_addParticleNet_switch,
-        addParticleNetMass=nanoAOD_addDeepInfoAK8_switch.nanoAOD_addParticleNetMass_switch,
-        jecPayload=nanoAOD_addDeepInfoAK8_switch.jecPayload
+                                     addDeepBTag=nanoAOD_addDeepInfoAK8_switch.nanoAOD_addDeepBTag_switch,
+                                     addDeepBoostedJet=nanoAOD_addDeepInfoAK8_switch.nanoAOD_addDeepBoostedJet_switch,
+                                     addDeepDoubleX=nanoAOD_addDeepInfoAK8_switch.nanoAOD_addDeepDoubleX_switch,
+                                     addDeepDoubleXV2=nanoAOD_addDeepInfoAK8_switch.nanoAOD_addDeepDoubleXV2_switch,
+                                     addParticleNet=nanoAOD_addDeepInfoAK8_switch.nanoAOD_addParticleNet_switch,
+                                     addParticleNetMass=nanoAOD_addDeepInfoAK8_switch.nanoAOD_addParticleNetMass_switch,
+                                     jecPayload=nanoAOD_addDeepInfoAK8_switch.jecPayload
     )
-
+    
     nanoAOD_tau_switch = cms.PSet(
         idsToAdd = cms.vstring()
     )
@@ -180,6 +180,7 @@ def nanoAOD_customizeCommon(process):
     ).toModify(
         process, lambda p : nanoAOD_addTauIds(p, nanoAOD_tau_switch.idsToAdd.value())
     )
+
     nanoAOD_boostedTau_switch = cms.PSet(
         idsToAdd = cms.vstring()
     )
@@ -188,7 +189,36 @@ def nanoAOD_customizeCommon(process):
     ).toModify(
         process, lambda p : nanoAOD_addBoostedTauIds(p, nanoAOD_boostedTau_switch.idsToAdd.value())
     )
+    
+    return process
 
+def nanoAOD_customizeHIN(process):
+
+    process=nanoAOD_customizeCommon(process)
+    def _removeUnusedInHIN(task,process,toRemove=['ak8','fatjet','subjet','puppi','lowptele','jetflavour','ptratiorelfor','tau','muon','photon','jets','softactivity']):
+        for p in task.moduleNames():
+            plow=p.lower()
+
+            ncounts=sum([plow.find(tkn)>=0 for tkn in toRemove])
+            if ncounts==0: continue
+            #if not 'ak8' in plow and not 'fatjet' in plow and not 'subjet' in plow and not 'puppi' in plow : continue
+            #and not 'genjetflavourtable' in plow and not 'lowptelectrons' in plow: continue
+            print(f'Removing {p}')
+            task.remove( getattr(process,p) )
+
+    for task in [process.nanoTableTaskCommon,
+                 process.jetMCTaskak8,
+                 process.jetMCTask,
+                 process.jetPuppiTask,
+                 process.metTablesTask,
+                 process.lowPtElectronMCTask,
+                 process.lowPtElectronTablesTask, 
+                 process.lowPtElectronTask ]:
+        
+        _removeUnusedInHIN(task,process)
+
+    #process.ptRatioRelForEle.srcJet = cms.InputTag("updatedJets")
+    print(process.jetTask)
     return process
 
 ###increasing the precision of selected GenParticles.
