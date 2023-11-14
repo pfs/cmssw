@@ -34,6 +34,7 @@ HiInclusiveJetAnalyzer::HiInclusiveJetAnalyzer(const edm::ParameterSet& iConfig)
   trackQuality_ = iConfig.getUntrackedParameter<string>("trackQuality", "highPurity");
 
   jetName_ = iConfig.getUntrackedParameter<string>("jetName");
+
   doGenTaus_ = iConfig.getUntrackedParameter<bool>("doGenTaus", false);
   doGenSym_ = iConfig.getUntrackedParameter<bool>("doGenSym", false);
   doSubJets_ = iConfig.getUntrackedParameter<bool>("doSubJets", false);
@@ -81,11 +82,10 @@ HiInclusiveJetAnalyzer::HiInclusiveJetAnalyzer(const edm::ParameterSet& iConfig)
   doCandidateBtagging_ = iConfig.getUntrackedParameter<bool>("doCandidateBtagging", true);
 
   pfCandidateLabel_ =
-      consumes<edm::View<pat::PackedCandidate>>(iConfig.getUntrackedParameter<edm::InputTag>("pfCandidateLabel"));
-
+    consumes<edm::View<pat::PackedCandidate>>(iConfig.getUntrackedParameter<edm::InputTag>("pfCandidateLabel"));
   if (isMC_)
     genParticleSrc_ =
-        consumes<reco::GenParticleCollection>(iConfig.getUntrackedParameter<edm::InputTag>("genParticles"));
+      consumes<reco::GenParticleCollection>(iConfig.getUntrackedParameter<edm::InputTag>("genParticles"));
 
   if (doLegacyBtagging_) {
     trackCHEBJetTags_ = "trackCountingHighEffBJetTags";
@@ -97,8 +97,11 @@ HiInclusiveJetAnalyzer::HiInclusiveJetAnalyzer(const edm::ParameterSet& iConfig)
     combinedSVV2BJetTags_ = "combinedSecondaryVertexV2BJetTags";
   }
   if (doCandidateBtagging_) {
-    deepCSVJetTags_ = jetName_ + "pfDeepCSVJetTags:probb";
+    deepCSVJetTags_ = "pfDeepCSVJetTags:probb";
+    deepFlavourJetTags_ = "pfDeepFlavourJetTagsSlimmedDeepFlavour:probb";
+    particleTransformerJetTags_ = "pfParticleTransformerAK4JetTagsSlimmedDeepFlavour:probb";
     pfJPJetTags_ = jetName_ + "pfJetProbabilityBJetTags";
+    pXJetTags_ = consumes<JetTagCollection> (iConfig.getUntrackedParameter<string>("pfJetProbabilityBJetTag",("pfJetProbabilityBJetTags")));
   }
   doSubEvent_ = false;
 
@@ -278,6 +281,9 @@ void HiInclusiveJetAnalyzer::beginJob() {
   }
   if (doCandidateBtagging_) {
     t->Branch("discr_deepCSV", jets_.discr_deepCSV, "discr_deepCSV[nref]/F");
+    t->Branch("discr_deepFlavour", jets_.discr_deepFlavour, "discr_deepFlavour[nref]/F");
+    t->Branch("discr_particleTransformer", jets_.discr_particleTransformer, "discr_particleTransformer[nref]/F");
+    t->Branch("discr_pX", jets_.discr_pX, "discr_pX[nref]/F");
     t->Branch("discr_pfJP", jets_.discr_pfJP, "discr_pfJP[nref]/F");
   }
   if (isMC_) {
@@ -416,6 +422,9 @@ void HiInclusiveJetAnalyzer::beginJob() {
   }
   if (doCandidateBtagging_) {
     memset(jets_.discr_deepCSV, 0, MAXJETS * sizeof(float));
+    memset(jets_.discr_deepFlavour, 0, MAXJETS * sizeof(float));
+    memset(jets_.discr_particleTransformer, 0, MAXJETS * sizeof(float));
+    memset(jets_.discr_pX, 0, MAXJETS * sizeof(float));
     memset(jets_.discr_pfJP, 0, MAXJETS * sizeof(float));
   }
 }
@@ -454,6 +463,10 @@ void HiInclusiveJetAnalyzer::analyze(const Event& iEvent, const EventSetup& iSet
     edm::Handle<reco::GenParticleCollection> genparts;
     iEvent.getByToken(genParticleSrc_, genparts);
   }
+
+  Handle<JetTagCollection> jetTags_pX;
+  iEvent.getByToken(pXJetTags_, jetTags_pX);
+
 
   // FILL JRA TREE
   jets_.nref = 0;
@@ -496,6 +509,13 @@ void HiInclusiveJetAnalyzer::analyze(const Event& iEvent, const EventSetup& iSet
     jets_.genSDConstituentsPhi.clear();
     jets_.genSDConstituentsM.clear();
   }
+  
+  const reco::JetTagCollection& bTags = *(jetTags_pX.product());
+  for (const auto& i_jetTag : bTags) {
+    //const auto& jetRef = i_jetTag.first;
+    const auto btagVal = i_jetTag.second;
+    std::cout<<" btagVal "<<btagVal<<std::endl;
+  }
 
   for (unsigned int j = 0; j < jets->size(); ++j) {
     const pat::Jet& jet = (*jets)[j];
@@ -506,8 +526,11 @@ void HiInclusiveJetAnalyzer::analyze(const Event& iEvent, const EventSetup& iSet
     if (std::abs(jet.eta()) > jetAbsEtaMax_)
       continue;
 
+
     if (doCandidateBtagging_) {
       jets_.discr_deepCSV[jets_.nref] = jet.bDiscriminator(deepCSVJetTags_);
+      jets_.discr_deepFlavour[jets_.nref] = jet.bDiscriminator(deepFlavourJetTags_);
+      jets_.discr_particleTransformer[jets_.nref] = jet.bDiscriminator(particleTransformerJetTags_);
       jets_.discr_pfJP[jets_.nref] = jet.bDiscriminator(pfJPJetTags_);
     }
     if (doLegacyBtagging_) {

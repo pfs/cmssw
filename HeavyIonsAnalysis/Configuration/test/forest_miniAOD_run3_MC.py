@@ -138,10 +138,10 @@ process.forest = cms.Path(
 
 addR3Jets = False
 addR3FlowJets = False
-addR4Jets = False
-addR4FlowJets = True
+addR4Jets = True
+addR4FlowJets = False
 matchJets = True             # Enables q/g and heavy flavor jet identification in MC
-addCandidateTagging = False
+addCandidateTagging = True
 doHIJetID = True             # Fill jet ID and composition information branches
 doWTARecluster = False        # Add jet phi and eta for WTA axis
 
@@ -178,7 +178,8 @@ if addR3Jets or addR3FlowJets or addR4Jets or addR4FlowJets :
         process.akCs4PFJetAnalyzer.matchTag = 'ak4PFMatchingFor' + jetName + 'patJets'
         process.akCs4PFJetAnalyzer.doHiJetID = doHIJetID
         process.akCs4PFJetAnalyzer.doWTARecluster = doWTARecluster
-        process.forest += process.extraJetsMC * process.jetsR4 * process.akCs4PFJetAnalyzer
+        #process.forest += process.extraJetsMC * process.jetsR4 * process.akCs4PFJetAnalyzer
+        process.forest += process.extraJetsMC * process.jetsR4
 
     if addR4FlowJets :
         process.jetsR4flow = cms.Sequence()
@@ -200,24 +201,38 @@ if addCandidateTagging:
     from PhysicsTools.PatAlgos.tools.jetTools import updateJetCollection
     updateJetCollection(
         process,
-        jetSource = cms.InputTag('slimmedJets'),
+        #jetSource = cms.InputTag('slimmedJets'),
+        jetSource = cms.InputTag('akCs0PFpatJets'),
         jetCorrections = ('AK4PFchs', cms.vstring(['L1FastJet', 'L2Relative', 'L3Absolute']), 'None'),
         btagDiscriminators = ['pfCombinedSecondaryVertexV2BJetTags', 'pfDeepCSVDiscriminatorsJetTags:BvsAll', 'pfDeepCSVDiscriminatorsJetTags:CvsB', 'pfDeepCSVDiscriminatorsJetTags:CvsL'], ## to add discriminators,
         btagPrefix = 'TEST',
     )
 
     process.updatedPatJets.addJetCorrFactors = False
+    '''
     process.updatedPatJets.discriminatorSources = cms.VInputTag(
         cms.InputTag('pfDeepCSVJetTags:probb'),
         cms.InputTag('pfDeepCSVJetTags:probc'),
         cms.InputTag('pfDeepCSVJetTags:probudsg'),
         cms.InputTag('pfDeepCSVJetTags:probbb'),
     )
+    '''
+    process.updatedPatJets.discriminatorSources =  cms.VInputTag(
+        cms.InputTag("pfDeepFlavourJetTagsSlimmedDeepFlavour","probb"),cms.InputTag("pfDeepFlavourJetTagsSlimmedDeepFlavour","probbb"), cms.InputTag("pfDeepFlavourJetTagsSlimmedDeepFlavour","probc"), cms.InputTag("pfDeepFlavourJetTagsSlimmedDeepFlavour","probg"), cms.InputTag("pfDeepFlavourJetTagsSlimmedDeepFlavour","problepb"),
+        cms.InputTag("pfDeepFlavourJetTagsSlimmedDeepFlavour","probuds"), 
+        #cms.InputTag("pfParticleNetFromMiniAODAK4CHSCentralJetTagsSlimmedDeepFlavour","probb"), cms.InputTag("pfParticleNetFromMiniAODAK4CHSCentralJetTagsSlimmedDeepFlavour","probc"), cms.InputTag("pfParticleNetFromMiniAODAK4CHSCentralJetTagsSlimmedDeepFlavour","probele"), cms.InputTag("pfParticleNetFromMiniAODAK4CHSCentralJetTagsSlimmedDeepFlavour","probg"),cms.InputTag("pfParticleNetFromMiniAODAK4CHSCentralJetTagsSlimmedDeepFlavour","probmu"), cms.InputTag("pfParticleNetFromMiniAODAK4CHSCentralJetTagsSlimmedDeepFlavour","probtaum1h0p"), cms.InputTag("pfParticleNetFromMiniAODAK4CHSCentralJetTagsSlimmedDeepFlavour","probtaum1h1p"), cms.InputTag("pfParticleNetFromMiniAODAK4CHSCentralJetTagsSlimmedDeepFlavour","probtaum1h2p"), cms.InputTag("pfParticleNetFromMiniAODAK4CHSCentralJetTagsSlimmedDeepFlavour","probtaum3h0p"), cms.InputTag("pfParticleNetFromMiniAODAK4CHSCentralJetTagsSlimmedDeepFlavour","probtaum3h1p"), cms.InputTag("pfParticleNetFromMiniAODAK4CHSCentralJetTagsSlimmedDeepFlavour","probtaup1h0p"), cms.InputTag("pfParticleNetFromMiniAODAK4CHSCentralJetTagsSlimmedDeepFlavour","probtaup1h1p"), cms.InputTag("pfParticleNetFromMiniAODAK4CHSCentralJetTagsSlimmedDeepFlavour","probtaup1h2p"), cms.InputTag("pfParticleNetFromMiniAODAK4CHSCentralJetTagsSlimmedDeepFlavour","probtaup3h0p"),cms.InputTag("pfParticleNetFromMiniAODAK4CHSCentralJetTagsSlimmedDeepFlavour","probtaup3h1p"), cms.InputTag("pfParticleNetFromMiniAODAK4CHSCentralJetTagsSlimmedDeepFlavour","probuds"), cms.InputTag("pfParticleNetFromMiniAODAK4CHSCentralJetTagsSlimmedDeepFlavour","ptcorr"), cms.InputTag("pfParticleNetFromMiniAODAK4CHSCentralJetTagsSlimmedDeepFlavour","ptnu"), cms.InputTag("pfParticleNetFromMiniAODAK4CHSCentralJetTagsSlimmedDeepFlavour","ptreshigh"),cms.InputTag("pfParticleNetFromMiniAODAK4CHSCentralJetTagsSlimmedDeepFlavour","ptreslow"), cms.InputTag("pfParticleNetFromMiniAODAK4CHSForwardJetTagsSlimmedDeepFlavour","probg"), cms.InputTag("pfParticleNetFromMiniAODAK4CHSForwardJetTagsSlimmedDeepFlavour","probq"), cms.InputTag("pfParticleNetFromMiniAODAK4CHSForwardJetTagsSlimmedDeepFlavour","ptcorr"), cms.InputTag("pfParticleNetFromMiniAODAK4CHSForwardJetTagsSlimmedDeepFlavour","ptnu"), cms.InputTag("pfParticleNetFromMiniAODAK4CHSForwardJetTagsSlimmedDeepFlavour","ptreshigh"), cms.InputTag("pfParticleNetFromMiniAODAK4CHSForwardJetTagsSlimmedDeepFlavour","ptreslow"), 
+        cms.InputTag("pfParticleTransformerAK4JetTagsSlimmedDeepFlavour","probb"), cms.InputTag("pfParticleTransformerAK4JetTagsSlimmedDeepFlavour","probbb"), cms.InputTag("pfParticleTransformerAK4JetTagsSlimmedDeepFlavour","probc"),
+        cms.InputTag("pfParticleTransformerAK4JetTagsSlimmedDeepFlavour","probg"), cms.InputTag("pfParticleTransformerAK4JetTagsSlimmedDeepFlavour","problepb"), cms.InputTag("pfParticleTransformerAK4JetTagsSlimmedDeepFlavour","probuds"), 
+        #cms.InputTag("pfParticleNetFromMiniAODAK4CHSCentralDiscriminatorsJetTagsSlimmedDeepFlavour","BvsAll"), cms.InputTag("pfParticleNetFromMiniAODAK4CHSCentralDiscriminatorsJetTagsSlimmedDeepFlavour","CvsB"),cms.InputTag("pfParticleNetFromMiniAODAK4CHSCentralDiscriminatorsJetTagsSlimmedDeepFlavour","CvsL"), cms.InputTag("pfParticleNetFromMiniAODAK4CHSCentralDiscriminatorsJetTagsSlimmedDeepFlavour","QvsG"), cms.InputTag("pfParticleNetFromMiniAODAK4CHSCentralDiscriminatorsJetTagsSlimmedDeepFlavour","TauVsEle"), cms.InputTag("pfParticleNetFromMiniAODAK4CHSCentralDiscriminatorsJetTagsSlimmedDeepFlavour","TauVsJet"), cms.InputTag("pfParticleNetFromMiniAODAK4CHSCentralDiscriminatorsJetTagsSlimmedDeepFlavour","TauVsMu"), cms.InputTag("pfParticleNetFromMiniAODAK4CHSForwardDiscriminatorsJetTagsSlimmedDeepFlavour","QvsG"), 
+        #cms.InputTag("pfParticleTransformerAK4DiscriminatorsJetTagsSlimmedDeepFlavour","BvsAll"), cms.InputTag("pfParticleTransformerAK4DiscriminatorsJetTagsSlimmedDeepFlavour","BvsL"), cms.InputTag("pfParticleTransformerAK4DiscriminatorsJetTagsSlimmedDeepFlavour","CvsB"), cms.InputTag("pfParticleTransformerAK4DiscriminatorsJetTagsSlimmedDeepFlavour","CvsL"),
+        #cms.InputTag("pfParticleTransformerAK4DiscriminatorsJetTagsSlimmedDeepFlavour","QvsG")
+    )
+
 
     process.akCs4PFJetAnalyzer.jetTag = "updatedPatJets"
 
-    process.forest.insert(1,process.candidateBtagging*process.updatedPatJets)
-
+    #process.forest.insert(1,process.candidateBtagging*process.updatedPatJets)
+    process.forest += process.candidateBtagging*process.updatedPatJets * process.akCs4PFJetAnalyzer
 
 #########################
 # Event Selection -> add the needed filters here
