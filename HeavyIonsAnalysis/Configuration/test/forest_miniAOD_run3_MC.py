@@ -180,6 +180,7 @@ if addR3Jets or addR3FlowJets or addR4Jets or addR4FlowJets :
         process.akCs4PFJetAnalyzer.doWTARecluster = doWTARecluster
         #process.forest += process.extraJetsMC * process.jetsR4 * process.akCs4PFJetAnalyzer
         process.forest += process.extraJetsMC * process.jetsR4
+        process.akCs0PFpatJets.embedPFCandidates = True
 
     if addR4FlowJets :
         process.jetsR4flow = cms.Sequence()
