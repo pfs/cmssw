@@ -101,9 +101,18 @@ HiInclusiveJetAnalyzer::HiInclusiveJetAnalyzer(const edm::ParameterSet& iConfig)
     deepFlavourJetTags_ = "pfDeepFlavourJetTagsSlimmedDeepFlavour:probb";
     particleTransformerJetTags_ = "pfParticleTransformerAK4JetTagsSlimmedDeepFlavour:probb";
     pfJPJetTags_ = jetName_ + "pfJetProbabilityBJetTags";
+
     deepCSVJetTagsTkn_ = consumes<JetTagCollection> (iConfig.getUntrackedParameter<string>("pfDeepCSVJetTags",("pfDeepCSVJetTags:probb")));
+    deepCSVJetTagsBBTkn_ = consumes<JetTagCollection> (iConfig.getUntrackedParameter<string>("pfDeepCSVJetTags",("pfDeepCSVJetTags:probbb")));
+
     deepFlavourJetTagsTkn_ = consumes<JetTagCollection> (iConfig.getUntrackedParameter<string>("pfDeepFlavourJetTagsSlimmedDeepFlavour",("pfDeepFlavourJetTagsSlimmedDeepFlavour:probb")));
+    deepFlavourJetTagsBBTkn_ = consumes<JetTagCollection> (iConfig.getUntrackedParameter<string>("pfDeepFlavourJetTagsSlimmedDeepFlavour",("pfDeepFlavourJetTagsSlimmedDeepFlavour:probbb")));
+    deepFlavourJetTagsLepBTkn_ = consumes<JetTagCollection> (iConfig.getUntrackedParameter<string>("pfDeepFlavourJetTagsSlimmedDeepFlavour",("pfDeepFlavourJetTagsSlimmedDeepFlavour:problepb")));
+
     particleTransformerJetTagsTkn_ = consumes<JetTagCollection> (iConfig.getUntrackedParameter<string>("pfParticleTransformerAK4JetTagsSlimmedDeepFlavour",("pfParticleTransformerAK4JetTagsSlimmedDeepFlavour:probb")));
+    particleTransformerJetTagsBBTkn_ = consumes<JetTagCollection> (iConfig.getUntrackedParameter<string>("pfParticleTransformerAK4JetTagsSlimmedDeepFlavour",("pfParticleTransformerAK4JetTagsSlimmedDeepFlavour:probbb")));
+    particleTransformerJetTagsLepBTkn_ = consumes<JetTagCollection> (iConfig.getUntrackedParameter<string>("pfParticleTransformerAK4JetTagsSlimmedDeepFlavour",("pfParticleTransformerAK4JetTagsSlimmedDeepFlavour:problepb")));
+
     pfJPJetTagsTkn_ = consumes<JetTagCollection> (iConfig.getUntrackedParameter<string>("pfJetProbabilityBJetTag",("pfJetProbabilityBJetTags")));
   }
   doSubEvent_ = false;
@@ -469,10 +478,23 @@ void HiInclusiveJetAnalyzer::analyze(const Event& iEvent, const EventSetup& iSet
 
   Handle<JetTagCollection> jetTags_deepCSV;
   iEvent.getByToken(deepCSVJetTagsTkn_, jetTags_deepCSV);
+  Handle<JetTagCollection> jetTags_deepCSVBB;
+  iEvent.getByToken(deepCSVJetTagsBBTkn_, jetTags_deepCSVBB);
+  
   Handle<JetTagCollection> jetTags_deepFlav;
   iEvent.getByToken(deepFlavourJetTagsTkn_, jetTags_deepFlav);
+  Handle<JetTagCollection> jetTags_deepFlavBB;
+  iEvent.getByToken(deepFlavourJetTagsBBTkn_, jetTags_deepFlavBB);
+  Handle<JetTagCollection> jetTags_deepFlavLepB;
+  iEvent.getByToken(deepFlavourJetTagsLepBTkn_, jetTags_deepFlavLepB);
+
   Handle<JetTagCollection> jetTags_partTransf;
   iEvent.getByToken(particleTransformerJetTagsTkn_, jetTags_partTransf);
+  Handle<JetTagCollection> jetTags_partTransfBB;
+  iEvent.getByToken(particleTransformerJetTagsBBTkn_, jetTags_partTransfBB);
+  Handle<JetTagCollection> jetTags_partTransfLepB;
+  iEvent.getByToken(particleTransformerJetTagsLepBTkn_, jetTags_partTransfLepB);
+
   Handle<JetTagCollection> jetTags_JP;
   iEvent.getByToken(pfJPJetTagsTkn_, jetTags_JP);
   
@@ -531,8 +553,13 @@ void HiInclusiveJetAnalyzer::analyze(const Event& iEvent, const EventSetup& iSet
   };
 
   const reco::JetTagCollection& bTags_deepCSV = *(jetTags_deepCSV.product());
+  const reco::JetTagCollection& bTags_deepCSVBB = *(jetTags_deepCSVBB.product());
   const reco::JetTagCollection& bTags_deepFlav = *(jetTags_deepFlav.product());
+  const reco::JetTagCollection& bTags_deepFlavBB = *(jetTags_deepFlavBB.product());
+  const reco::JetTagCollection& bTags_deepFlavLepB = *(jetTags_deepFlavLepB.product());
   const reco::JetTagCollection& bTags_partTransf = *(jetTags_partTransf.product());
+  const reco::JetTagCollection& bTags_partTransfBB = *(jetTags_partTransfBB.product());
+  const reco::JetTagCollection& bTags_partTransfLepB = *(jetTags_partTransfLepB.product());
   const reco::JetTagCollection& bTags_JP = *(jetTags_JP.product());
 
   for (unsigned int j = 0; j < jets->size(); ++j) {
@@ -545,9 +572,9 @@ void HiInclusiveJetAnalyzer::analyze(const Event& iEvent, const EventSetup& iSet
     
     if (doCandidateBtagging_) {
 
-      jets_.discr_deepCSV[jets_.nref] = getTag(bTags_deepCSV,jet);
-      jets_.discr_deepFlavour[jets_.nref] = getTag(bTags_deepFlav,jet);
-      jets_.discr_particleTransformer[jets_.nref] = getTag(bTags_partTransf,jet);
+      jets_.discr_deepCSV[jets_.nref] = getTag(bTags_deepCSV,jet)+getTag(bTags_deepCSVBB,jet);
+      jets_.discr_deepFlavour[jets_.nref] = getTag(bTags_deepFlav,jet)+getTag(bTags_deepFlavBB,jet)+getTag(bTags_deepFlavLepB,jet);
+      jets_.discr_particleTransformer[jets_.nref] = getTag(bTags_partTransf,jet)+getTag(bTags_partTransfBB,jet)+getTag(bTags_partTransfLepB,jet);
       jets_.discr_pfJP[jets_.nref] = getTag(bTags_JP,jet);
 
       //jets_.discr_deepCSV[jets_.nref] = jet.bDiscriminator(deepCSVJetTags_);

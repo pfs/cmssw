@@ -128,7 +128,10 @@ private:
   std::string deepFlavourJetTags_;
   std::string particleTransformerJetTags_;
 
-  edm::EDGetTokenT<reco::JetTagCollection> deepCSVJetTagsTkn_,deepFlavourJetTagsTkn_,particleTransformerJetTagsTkn_,pfJPJetTagsTkn_;
+  edm::EDGetTokenT<reco::JetTagCollection> deepCSVJetTagsTkn_,deepCSVJetTagsBBTkn_,
+    deepFlavourJetTagsTkn_,deepFlavourJetTagsBBTkn_,deepFlavourJetTagsLepBTkn_,
+    particleTransformerJetTagsTkn_,particleTransformerJetTagsBBTkn_,particleTransformerJetTagsLepBTkn_,
+    pfJPJetTagsTkn_;
 
   static const int MAXJETS = 1000;
   static const int MAXTRACKS = 5000;
