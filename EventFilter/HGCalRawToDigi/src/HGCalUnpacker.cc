@@ -152,11 +152,18 @@ uint8_t HGCalUnpacker::parseFEDData(unsigned fedId,
             << "), got 0x" << econd_headers[0] << ".";
         return UNPACKER_STAT::WrongECONDHeader;
       }
+
       const auto econd_payload_length = ((econd_headers[0] >> ECOND_FRAME::PAYLOAD_POS) & ECOND_FRAME::PAYLOAD_MASK);
       // Compute ECON-D trailer CRC
       bool crcvalid = hgcal::econdCRCAnalysis(ptr, 0, econd_payload_length);
       LogDebug("[HGCalUnpacker]") << "crc value " << crcvalid;
       ++ptr;
+      
+      if (!crcvalid) {
+              econd_pkt_status |= 0b1000; //If CRC errors in the trailer, update the pkt status
+      }
+
+      econdPacketInfo.view()[ECONDdenseIdx].cbFlag() = (uint16_t)(econd_pkt_status);
 
       if (!crcvalid) {
         econd_pkt_status |=
