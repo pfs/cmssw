@@ -154,6 +154,7 @@ uint8_t HGCalUnpacker::parseFEDData(unsigned fedId,
       }
 
       const auto econd_payload_length = ((econd_headers[0] >> ECOND_FRAME::PAYLOAD_POS) & ECOND_FRAME::PAYLOAD_MASK);
+
       // Compute ECON-D trailer CRC
       bool crcvalid = hgcal::econdCRCAnalysis(ptr, 0, econd_payload_length);
       LogDebug("[HGCalUnpacker]") << "crc value " << crcvalid;
