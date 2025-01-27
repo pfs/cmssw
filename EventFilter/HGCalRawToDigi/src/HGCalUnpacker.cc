@@ -159,9 +159,9 @@ uint8_t HGCalUnpacker::parseFEDData(unsigned fedId,
       bool crcvalid = hgcal::econdCRCAnalysis(ptr, 0, econd_payload_length);
       LogDebug("[HGCalUnpacker]") << "crc value " << crcvalid;
       ++ptr;
-      
+
       if (!crcvalid) {
-              econd_pkt_status |= 0b1000; //If CRC errors in the trailer, update the pkt status
+        econd_pkt_status |= 0b1000;  //If CRC errors in the trailer, update the pkt status
       }
 
       econdPacketInfo.view()[ECONDdenseIdx].cbFlag() = (uint16_t)(econd_pkt_status);
