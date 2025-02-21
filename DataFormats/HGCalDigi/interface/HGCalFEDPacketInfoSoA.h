@@ -12,11 +12,11 @@
 namespace hgcaldigi {
 
   namespace FEDUnpackingFlags {
-    constexpr uint8_t Normal=0, GenericUnpackError=1, ErrorSLinkHeader=2, ErrorPayload=3,  ErrorCaptureBlockHeader=4, ActiveCaptureBlockFlags=5,
+    constexpr uint8_t NormalUnpacking=0, GenericUnpackError=1, ErrorSLinkHeader=2, ErrorPayload=3,  ErrorCaptureBlockHeader=4, ActiveCaptureBlockFlags=5,
       ErrorECONDHeader=6, ECONDPayloadLengthOverflow=7, ECONDPayloadLengthMismatch=8, ErrorSLinkTrailer=9, EarlySLinkEnd=10;
   }  // namespace FEDUnpackingFlags
 
-  inline bool isNotNormalFED(uint16_t fedUnpackingFlag) { return !((fedUnpackingFlag>>FEDUnpackingFlags::Normal) & 0x1); }
+  inline bool isNotNormalFED(uint16_t fedUnpackingFlag) { return !((fedUnpackingFlag>>FEDUnpackingFlags::NormalUnpacking) & 0x1); }
   inline bool hasGenericUnpackError(uint16_t fedUnpackingFlag) { return ((fedUnpackingFlag>>FEDUnpackingFlags::GenericUnpackError) & 0x1); }
   inline bool hasHeaderUnpackError(uint16_t fedUnpackingFlag) { return ((fedUnpackingFlag>>FEDUnpackingFlags::ErrorSLinkHeader) & 0x1); }
   inline bool hasPayloadUnpackError(uint16_t fedUnpackingFlag) { return ((fedUnpackingFlag>>FEDUnpackingFlags::ErrorPayload) & 0x1); }

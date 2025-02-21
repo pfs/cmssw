@@ -101,8 +101,7 @@ void HGCalRawToDigi::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) 
     for (unsigned fedId = 0; fedId < moduleIndexer.fedCount(); ++fedId) {
       const auto& fed_data = raw_data.FEDData(fedId);
       fedPacketInfo.view()[fedId].FEDPayload() = fed_data.size();
-      if (fed_data.size() == 0)
-        continue;
+      if (fed_data.size() == 0) continue;
       fedPacketInfo.view()[fedId].FEDUnpackingFlag() = callUnpacker(fedId, fed_data, moduleIndexer, config, digis, econdPacketInfo);
     }
   }
@@ -133,7 +132,7 @@ uint16_t HGCalRawToDigi::callUnpacker(unsigned fedId, const FEDRawData &fed_data
   try {
     status = unpacker_.parseFEDData(fedId, fed_data, moduleIndexer, config, digis, econdPacketInfo, headersOnly_);
   } catch(std::exception &e) {
-    status &= ~((0x1<<hgcaldigi::FEDUnpackingFlags::Normal)); //if it was normal it no longer is
+    status &= ~((0x1<<hgcaldigi::FEDUnpackingFlags::NormalUnpacking)); //if it was normal it no longer is
     status |= (0x1<<hgcaldigi::FEDUnpackingFlags::GenericUnpackError);
     if(headersOnly_) status |=  (0x1<<hgcaldigi::FEDUnpackingFlags::ErrorSLinkHeader);
     else status |=  (0x1<<hgcaldigi::FEDUnpackingFlags::ErrorPayload);
@@ -149,7 +148,7 @@ void HGCalRawToDigi::fillDescriptions(edm::ConfigurationDescriptions& descriptio
   desc.add<edm::InputTag>("src", edm::InputTag("rawDataCollector"));
   desc.add<std::vector<unsigned int> >("fedIds", {});
   desc.add<bool>("doSerial", true)->setComment("do not attempt to paralleize unpacking of different FEDs");
-  desc.add<bool>("headersOnly", true)->setComment("unpack only headers");
+  desc.add<bool>("headersOnly", false)->setComment("unpack only headers");
   descriptions.add("hgcalDigis", desc);
 }
 

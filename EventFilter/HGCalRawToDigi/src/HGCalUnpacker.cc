@@ -106,7 +106,7 @@ uint16_t HGCalUnpacker::parseFEDData(unsigned fedId,
               << ", 64b padding word caught before parsing all max capture blocks, captureblockIdx = "
               << captureblockIdx;
           econdPacketInfo.view()[ECONDdenseIdx].exception() = 7;
-          return (0x1 << hgcaldigi::FEDUnpackingFlags::Normal);
+          return (0x1 << hgcaldigi::FEDUnpackingFlags::ErrorCaptureBlockHeader);
         }
       }
       econdPacketInfo.view()[ECONDdenseIdx].exception() = 2;
@@ -128,7 +128,7 @@ uint16_t HGCalUnpacker::parseFEDData(unsigned fedId,
         // always increment the global ECON-D index (unless inactive/unconnected)
         globalECONDIdx++;
       }
-      hasActiveCBFlags = (econd_pkt_status != backend::ECONDPacketStatus::Normal);
+      hasActiveCBFlags = (econd_pkt_status != backend::ECONDPacketStatus::Normal) && (econd_pkt_status != backend::ECONDPacketStatus::InactiveECOND);
       bool pkt_exists =
           (econd_pkt_status == backend::ECONDPacketStatus::Normal) ||
           (econd_pkt_status == backend::ECONDPacketStatus::PayloadCRCError) ||
@@ -341,6 +341,7 @@ uint16_t HGCalUnpacker::parseFEDData(unsigned fedId,
               digis.view()[denseIdx].cm() = cmSum;
               digis.view()[denseIdx].flags() = hgcal::DIGI_FLAG::Normal;
             }
+
             iword += 1;
           }
         }
@@ -373,5 +374,5 @@ uint16_t HGCalUnpacker::parseFEDData(unsigned fedId,
     return (0x1 << hgcaldigi::FEDUnpackingFlags::ErrorSLinkTrailer) | (hasActiveCBFlags<<hgcaldigi::FEDUnpackingFlags::ActiveCaptureBlockFlags);
   }
   
-  return (0x1 << hgcaldigi::FEDUnpackingFlags::Normal) | (hasActiveCBFlags<<hgcaldigi::FEDUnpackingFlags::ActiveCaptureBlockFlags);
+  return (0x1 << hgcaldigi::FEDUnpackingFlags::NormalUnpacking) | (hasActiveCBFlags<<hgcaldigi::FEDUnpackingFlags::ActiveCaptureBlockFlags);
 }
